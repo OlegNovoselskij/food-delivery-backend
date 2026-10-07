@@ -5,3 +5,7 @@ psycopg2-binary
 alembic
 python-dotenv
 pydantic
+PyJWT
+bcrypt
+email-validator
+python-multipart

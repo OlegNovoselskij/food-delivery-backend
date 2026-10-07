@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime
 from sqlalchemy.sql import func
 from app.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -11,5 +12,6 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     phone = Column(String)
-    role = Column(String, default="customer")
+    bio = Column(Text)
+    role = Column(String, nullable=False, default="student")  # student, teacher, admin
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,10 +1,12 @@
 services:
   backend:
     build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/fooddelivery
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/fooddelivery
+      SECRET_KEY: dev-secret-key-change-me-in-production-min-32-bytes
     volumes:
       - .:/code
     depends_on:

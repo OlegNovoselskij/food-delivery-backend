@@ -1,11 +1,6 @@
 from app.models.user import User
-from app.models.loyalty_card import LoyaltyCard
-from app.models.restaurant import Restaurant
-from app.models.discount_rule import DiscountRule
-from app.models.favorite_restaurant import FavoriteRestaurant
+from app.models.catalog import Category, Course, Module, Lesson, LessonMaterial
+from app.models.quiz import Quiz, Question, AnswerOption
+from app.models.enrollment import Enrollment, Payment, LessonProgress, Certificate
+from app.models.attempt import QuizAttempt, AttemptAnswer
 from app.models.review import Review
-from app.models.menu_item import MenuItem
-from app.models.delivery_option import DeliveryOption
-from app.models.courier import Courier
-from app.models.order import Order
-from app.models.order_item import OrderItem
