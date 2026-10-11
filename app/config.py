@@ -28,3 +28,18 @@ MATERIAL_TYPES = {
     "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
 }
+
+VALKEY_URL = os.getenv("VALKEY_URL", "redis://localhost:6379/0")
+
+WS_TICKET_TTL_SECONDS = 60
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
+    if origin.strip()
+]
+
+PUBLIC_API_URL = os.getenv("PUBLIC_API_URL", "http://localhost:8000")
+CERTIFICATE_FONT_PATH = os.getenv("CERTIFICATE_FONT_PATH", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+CERTIFICATE_FONT_BOLD_PATH = os.getenv(
+    "CERTIFICATE_FONT_BOLD_PATH", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+)

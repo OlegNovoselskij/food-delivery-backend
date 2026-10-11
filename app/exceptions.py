@@ -171,3 +171,11 @@ class InvalidQuestion(Exception):
 
 class InvalidReview(Exception):
     pass
+
+
+class NotificationNotFound(Exception):
+    pass
+
+
+class CertificateNotFound(Exception):
+    pass

@@ -12,11 +12,15 @@ services:
       S3_ACCESS_KEY: rustfsadmin
       S3_SECRET_KEY: rustfsadmin
       S3_BUCKET: courses
+      VALKEY_URL: redis://valkey:6379/0
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000,http://localhost:8000"
+      PUBLIC_API_URL: http://localhost:8000
     volumes:
       - .:/code
     depends_on:
       - db
       - rustfs
+      - valkey
 
   db:
     image: postgres:16
@@ -42,6 +46,17 @@ services:
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
+
+  valkey:
+    image: valkey/valkey:9.1.1-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "127.0.0.1:6379:6379"
 
 volumes:
   pgdata:

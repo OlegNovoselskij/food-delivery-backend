@@ -1,9 +1,24 @@
 from fastapi import FastAPI
 
 from app.api.error_handlers import register_error_handlers
-from app.api.v1 import auth, categories, courses, curriculum, enrollments, learning, media, quizzes, users
+from app.api.v1 import (
+    auth,
+    categories,
+    certificates,
+    courses,
+    curriculum,
+    enrollments,
+    learning,
+    media,
+    notifications,
+    quizzes,
+    users,
+)
+from app.patterns.observer.subscribers import register_subscribers
 
 app = FastAPI(title="Online Courses API")
+
+register_subscribers()
 
 register_error_handlers(app)
 
@@ -16,6 +31,8 @@ app.include_router(media.router, prefix="/api/v1")
 app.include_router(enrollments.router, prefix="/api/v1")
 app.include_router(learning.router, prefix="/api/v1")
 app.include_router(quizzes.router, prefix="/api/v1")
+app.include_router(notifications.router, prefix="/api/v1")
+app.include_router(certificates.router, prefix="/api/v1")
 
 
 @app.get("/health")

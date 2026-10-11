@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -30,8 +31,8 @@ def create_access_token(user_id: int, role: str) -> str:
 
 def decode_access_token(token: str) -> dict:
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    if payload.get("typ") == "upload":
-        raise jwt.InvalidTokenError("upload tickets cannot be used as access tokens")
+    if payload.get("typ") is not None:  # access tokens have no "typ"; tickets do
+        raise jwt.InvalidTokenError("tickets cannot be used as access tokens")
     return payload
 
 
@@ -56,4 +57,17 @@ def decode_upload_ticket(token: str) -> dict:
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     if payload.get("typ") != "upload":
         raise jwt.InvalidTokenError("not an upload ticket")
+    return payload
+
+
+def create_ws_ticket(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(seconds=config.WS_TICKET_TTL_SECONDS)
+    payload = {"typ": "ws", "uid": user_id, "jti": uuid.uuid4().hex, "exp": expire}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_ws_ticket(token: str) -> dict:
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    if payload.get("typ") != "ws":
+        raise jwt.InvalidTokenError("not a websocket ticket")
     return payload

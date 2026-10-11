@@ -14,6 +14,8 @@ from app.models.enrollment import Enrollment, Payment
 from app.models.user import User
 from app.patterns.adapters.payment_gateway import PaymentGateway
 from app.patterns.factories.enrollment_factory import EnrollmentFactory
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import PaymentSucceeded
 from app.patterns.states.enrollment_state import EnrollmentStateMachine
 from app.repository import course_repository, enrollment_repository
 from app.schemas.enrollment import EnrollmentFilters, PayRequest
@@ -87,6 +89,16 @@ def pay(
         raise PaymentDeclined()
 
     machine.activate()
+    event_bus.publish(
+        db,
+        PaymentSucceeded(
+            enrollment_id=enrollment.id,
+            student_id=user.id,
+            course_id=course.id,
+            course_title=course.title,
+            amount=course.price,
+        ),
+    )
     db.commit()
     return enrollment_repository.get_by_id(db, enrollment.id)
 

@@ -17,6 +17,8 @@ from app.models.attempt import AttemptAnswer, QuizAttempt
 from app.models.enrollment import Enrollment
 from app.models.user import User
 from app.patterns.factories.grading_factory import GradingStrategyFactory
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import AttemptSubmitted, QuizGraded
 from app.patterns.states.attempt_state import IN_PROGRESS, AttemptStateMachine
 from app.patterns.strategies.grading import StudentAnswer
 from app.repository import attempt_repository, enrollment_repository, quiz_repository
@@ -77,12 +79,10 @@ def _load_view(db: Session, attempt_id: int) -> dict:
     return _attempt_view(attempt_repository.get_full(db, attempt_id))
 
 
-def _finalize(db: Session, attempt: QuizAttempt, enrollment: Enrollment, earned: int) -> None:
+def _set_score(attempt: QuizAttempt, earned: int) -> None:
     attempt.points_earned = earned
     attempt.score = earned * 100 // attempt.points_total if attempt.points_total else 0
     attempt.passed = attempt.score >= attempt.quiz.passing_score
-    db.flush()
-    progress_service.complete_if_finished(db, enrollment)
 
 
 def start_attempt(db: Session, quiz_id: int, student: User) -> dict:
@@ -174,9 +174,22 @@ def submit_attempt(db: Session, attempt_id: int, student: User, data: SubmitRequ
         )
     attempt.points_total = sum(question.points for question in quiz.questions)
 
-    if not needs_review:
-        earned = sum(result.points or 0 for _, result in results.values())
-        _finalize(db, attempt, enrollment, earned)
+    if needs_review:
+        course = quiz.module.course
+        event_bus.publish(
+            db,
+            AttemptSubmitted(
+                attempt_id=attempt.id,
+                teacher_id=course.teacher_id,
+                student_name=f"{student.name} {student.surname}",
+                quiz_title=quiz.title,
+                course_id=course.id,
+                course_title=course.title,
+            ),
+        )
+    else:
+        _set_score(attempt, sum(result.points or 0 for _, result in results.values()))
+        progress_service.complete_if_finished(db, enrollment)
 
     db.commit()
     return _load_view(db, attempt.id)
@@ -212,8 +225,20 @@ def review_attempt(db: Session, attempt_id: int, reviewer: User, data: ReviewReq
     machine.grade()
 
     enrollment = enrollment_repository.get_by_id_for_update(db, attempt.enrollment_id)
-    earned = sum(answer.points_awarded or 0 for answer in attempt.answers)
-    _finalize(db, attempt, enrollment, earned)
+    _set_score(attempt, sum(answer.points_awarded or 0 for answer in attempt.answers))
+    event_bus.publish(
+        db,
+        QuizGraded(
+            attempt_id=attempt.id,
+            student_id=enrollment.student_id,
+            quiz_id=attempt.quiz_id,
+            quiz_title=attempt.quiz.title,
+            course_id=attempt.quiz.module.course_id,
+            score=attempt.score,
+            passed=attempt.passed,
+        ),
+    )
+    progress_service.complete_if_finished(db, enrollment)
 
     db.commit()
     return _load_view(db, attempt.id)

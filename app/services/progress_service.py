@@ -5,6 +5,8 @@ from app.models.catalog import Lesson
 from app.models.enrollment import Enrollment, LessonProgress
 from app.models.user import User
 from app.patterns.composite.course_tree import CourseNode, ProgressStats, build_course_tree
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import CourseCompleted
 from app.patterns.states.enrollment_state import EnrollmentStateMachine
 from app.repository import curriculum_repository, enrollment_repository, progress_repository
 from app.schemas.enrollment import EnrollmentFilters
@@ -72,11 +74,26 @@ def _load_tree(db: Session, enrollment: Enrollment) -> CourseNode:
     )
 
 
-def complete_if_finished(db: Session, enrollment: Enrollment) -> None:
+def complete_if_finished(db: Session, enrollment: Enrollment, tree: CourseNode | None = None) -> None:
     if enrollment.status != "active":
         return
-    if _load_tree(db, enrollment).stats().is_complete:
-        EnrollmentStateMachine(enrollment).complete()
+    # autoflush is off: make pending changes (a passed attempt, a new progress row) visible to the queries below
+    db.flush()
+    if tree is None:
+        tree = _load_tree(db, enrollment)
+    if not tree.stats().is_complete:
+        return
+
+    EnrollmentStateMachine(enrollment).complete()
+    event_bus.publish(
+        db,
+        CourseCompleted(
+            enrollment_id=enrollment.id,
+            student_id=enrollment.student_id,
+            course_id=enrollment.course_id,
+            course_title=enrollment.course.title,
+        ),
+    )
 
 
 def _get_own_locked(db: Session, enrollment_id: int, user: User) -> Enrollment:
@@ -107,8 +124,7 @@ def mark_lesson(db: Session, enrollment_id: int, lesson_id: int, user: User) -> 
     progress_repository.add(db, LessonProgress(enrollment_id=enrollment.id, lesson_id=lesson.id))
 
     tree = _load_tree(db, enrollment)
-    if tree.stats().is_complete:
-        EnrollmentStateMachine(enrollment).complete()
+    complete_if_finished(db, enrollment, tree)
 
     result = _course_progress(enrollment, tree)  # build the answer BEFORE commit expires the objects
     db.commit()
