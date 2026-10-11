@@ -36,6 +36,17 @@ def test_the_catalog_lists_only_published_courses_and_filters_them(client, teach
     assert client.get(f"{API}/courses", params={"q": "python"}).json()["total"] == 1
 
 
+def test_course_cards_report_the_number_of_modules(client, teacher, category):
+    course = build_course(client, teacher, category.id)
+    extra = client.post(
+        f"{API}/courses/{course['course_id']}/modules", headers=auth(teacher), json={"title": "Module 2"}
+    )
+    assert extra.status_code == 201
+    item = client.get(f"{API}/courses").json()["items"][0]
+    assert item["modules_count"] == 2
+    assert client.get(f"{API}/courses/{course['course_id']}").json()["modules_count"] == 2
+
+
 def test_a_teacher_cannot_edit_someone_elses_course(client, db, teacher, category):
     course_id = build_course(client, teacher, category.id)["course_id"]
     other = create_user(db, "teacher", email="other@example.com")

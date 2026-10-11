@@ -80,6 +80,7 @@ class CourseListItem(BaseModel):
     cover_url: str | None
     rating_avg: float | None
     reviews_count: int
+    modules_count: int
     created_at: datetime
     category: CategoryOut
     teacher: TeacherBrief

@@ -40,6 +40,10 @@ class Course(Base):
     reviews = relationship("Review", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course")
 
+    @property
+    def modules_count(self) -> int:
+        return len(self.modules)
+
     def __str__(self) -> str:
         return self.title
 

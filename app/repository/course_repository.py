@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import Course
 
@@ -13,7 +13,7 @@ SORT_ORDER = {
 
 
 def _with_relations(query):
-    return query.options(joinedload(Course.teacher), joinedload(Course.category))
+    return query.options(joinedload(Course.teacher), joinedload(Course.category), selectinload(Course.modules))
 
 
 def _escape_like(value: str) -> str:
