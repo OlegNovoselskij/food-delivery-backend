@@ -193,3 +193,7 @@ class ReportAccessDenied(Exception):
 
 class ReviewNotFound(Exception):
     pass
+
+
+class InvalidCode(Exception):
+    pass

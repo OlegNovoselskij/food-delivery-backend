@@ -15,3 +15,5 @@ reportlab
 sqladmin
 itsdangerous
 greenlet
+httpx
+jinja2

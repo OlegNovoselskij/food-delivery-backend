@@ -8,6 +8,7 @@ from wtforms import SelectField
 from app.admin.db import invalidate_catalog, run_in_db
 from app.api.error_handlers import ERROR_MAP
 from app.models.catalog import Category, Course
+from app.models.email_outbox import EmailOutbox
 from app.models.enrollment import Certificate, Enrollment, Payment
 from app.models.review import Review
 from app.models.user import User
@@ -76,7 +77,7 @@ class UserAdmin(SecureView, model=User):
     can_create = False
     can_delete = False
 
-    column_list = [User.id, User.name, User.surname, User.email, User.role, User.created_at]
+    column_list = [User.id, User.name, User.surname, User.email, User.role, User.email_verified, User.created_at]
     column_searchable_list = [User.email, User.name, User.surname]
     column_sortable_list = [User.id, User.email, User.role, User.created_at]
     column_default_sort = ("created_at", True)
@@ -263,3 +264,17 @@ class CertificateAdmin(ReadOnlyView, model=Certificate):
     column_searchable_list = [Certificate.certificate_number]
     column_sortable_list = [Certificate.id, Certificate.issued_at]
     column_default_sort = ("issued_at", True)
+
+
+class EmailOutboxAdmin(ReadOnlyView, model=EmailOutbox):
+    name = "Email"
+    name_plural = "Emails"
+    icon = "fa-solid fa-envelope"
+    category = "Sales"
+
+    column_list = [EmailOutbox.id, EmailOutbox.to_email, EmailOutbox.subject, EmailOutbox.status,
+                   EmailOutbox.attempts, EmailOutbox.next_attempt_at, EmailOutbox.last_error, EmailOutbox.sent_at]
+    column_searchable_list = [EmailOutbox.to_email, EmailOutbox.subject]
+    column_sortable_list = [EmailOutbox.id, EmailOutbox.status, EmailOutbox.attempts, EmailOutbox.sent_at]
+    column_default_sort = ("id", True)
+    column_details_exclude_list = [EmailOutbox.text_body, EmailOutbox.html_body]  # bodies may hold one-time codes

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app import realtime
 from app.cache import catalog_cache
+from app.emails import messages
 from app.models.enrollment import Certificate
 from app.models.notification import Notification
 from app.patterns.observer.after_commit import run_after_commit
@@ -17,7 +18,8 @@ from app.patterns.observer.events import (
     PaymentSucceeded,
     QuizGraded,
 )
-from app.repository import certificate_repository, notification_repository
+from app.repository import certificate_repository, notification_repository, user_repository
+from app.services import email_service
 from app.schemas.notification import NotificationOut
 
 
@@ -102,3 +104,25 @@ class NotificationObserver:
 class CacheInvalidationObserver:
     def on_catalog_changed(self, db: Session, event: CatalogChanged) -> None:
         run_after_commit(db, catalog_cache.invalidate)
+
+
+class EmailObserver:
+    def on_event(self, db: Session, event: DomainEvent) -> None:
+        match event:
+            case PaymentSucceeded():
+                user = user_repository.get_by_id(db, event.student_id)
+                email_service.enqueue(
+                    db,
+                    user.email,
+                    messages.payment_receipt_email(user.name, event.course_title, event.amount, event.course_id),
+                )
+            case CourseCompleted():
+                user = user_repository.get_by_id(db, event.student_id)
+                certificate = certificate_repository.get_by_enrollment(db, event.enrollment_id)
+                if certificate is not None:
+                    email_service.enqueue(
+                        db,
+                        user.email,
+                        messages.certificate_email(user.name, event.course_title, certificate.certificate_number),
+                        dedupe_key=f"certificate:{event.enrollment_id}",
+                    )

@@ -51,6 +51,7 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.CertificateNotFound: (404, "Certificate not found"),
     exc.ReportAccessDenied: (403, "You cannot access this report"),
     exc.ReviewNotFound: (404, "Review not found"),
+    exc.InvalidCode: (400, "The code is invalid or has expired"),
 }
 
 

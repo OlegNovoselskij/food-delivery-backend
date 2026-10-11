@@ -14,6 +14,7 @@ VIEWS = (
     views.EnrollmentAdmin,
     views.PaymentAdmin,
     views.CertificateAdmin,
+    views.EmailOutboxAdmin,
 )
 
 

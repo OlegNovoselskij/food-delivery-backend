@@ -26,7 +26,13 @@ def _resolve_user(credentials: HTTPAuthorizationCredentials | None, db: Session)
         user_id = int(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError):
         return None
-    return user_repository.get_by_id(db, user_id)
+    user = user_repository.get_by_id(db, user_id)
+    if user is None or not user.email_verified:  # an unfinished registration never authenticates
+        return None
+    changed = user.password_changed_at
+    if changed is not None and int(payload.get("iat", 0)) < int(changed.timestamp()):
+        return None  # issued before the last password change
+    return user
 
 
 def get_current_user(

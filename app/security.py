@@ -1,4 +1,7 @@
+import hashlib
+import hmac
 import os
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -16,7 +19,9 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def verify_password(password: str, password_hash: str) -> bool:
+def verify_password(password: str, password_hash: str | None) -> bool:
+    if not password_hash:  # an account without a password (an unfinished registration) can never log in
+        return False
     raw = password.encode()
     if len(raw) > 72:  # bcrypt accepts at most 72 bytes; a longer password can never be correct
         return False
@@ -24,8 +29,13 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_access_token(user_id: int, role: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {"sub": str(user_id), "role": role, "exp": expire}
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user_id),
+        "role": role,
+        "iat": now,  # lets us reject tokens issued before the last password change
+        "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -71,3 +81,17 @@ def decode_ws_ticket(token: str) -> dict:
     if payload.get("typ") != "ws":
         raise jwt.InvalidTokenError("not a websocket ticket")
     return payload
+
+
+def generate_code() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_code(user_id: int, purpose: str, code: str) -> str:
+    # bound to the user and the purpose: a code for one account or flow is useless for another
+    message = f"{purpose}:{user_id}:{code}".encode()
+    return hmac.new(SECRET_KEY.encode(), message, hashlib.sha256).hexdigest()
+
+
+def codes_match(stored_hash: str, user_id: int, purpose: str, code: str) -> bool:
+    return hmac.compare_digest(stored_hash, hash_code(user_id, purpose, code))

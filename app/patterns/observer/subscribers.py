@@ -6,7 +6,12 @@ from app.patterns.observer.events import (
     PaymentSucceeded,
     QuizGraded,
 )
-from app.patterns.observer.observers import CacheInvalidationObserver, CertificateObserver, NotificationObserver
+from app.patterns.observer.observers import (
+    CacheInvalidationObserver,
+    CertificateObserver,
+    EmailObserver,
+    NotificationObserver,
+)
 
 _registered = False
 
@@ -23,4 +28,7 @@ def register_subscribers() -> None:
     for event_type in (PaymentSucceeded, AttemptSubmitted, QuizGraded, CourseCompleted):
         event_bus.subscribe(event_type, notifications.on_event)
     event_bus.subscribe(CatalogChanged, CacheInvalidationObserver().on_catalog_changed)
+    emails = EmailObserver()
+    for event_type in (PaymentSucceeded, CourseCompleted):
+        event_bus.subscribe(event_type, emails.on_event)
     _registered = True

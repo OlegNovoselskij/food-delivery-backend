@@ -5,3 +5,5 @@ from app.models.enrollment import Enrollment, Payment, LessonProgress, Certifica
 from app.models.attempt import QuizAttempt, AttemptAnswer
 from app.models.review import Review
 from app.models.notification import Notification
+from app.models.email_code import EmailCode
+from app.models.email_outbox import EmailOutbox
