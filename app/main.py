@@ -12,6 +12,8 @@ from app.api.v1 import (
     media,
     notifications,
     quizzes,
+    recommendations,
+    reports,
     users,
 )
 from app.patterns.observer.subscribers import register_subscribers
@@ -33,6 +35,8 @@ app.include_router(learning.router, prefix="/api/v1")
 app.include_router(quizzes.router, prefix="/api/v1")
 app.include_router(notifications.router, prefix="/api/v1")
 app.include_router(certificates.router, prefix="/api/v1")
+app.include_router(reports.router, prefix="/api/v1")
+app.include_router(recommendations.router, prefix="/api/v1")
 
 
 @app.get("/health")

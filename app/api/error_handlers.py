@@ -49,6 +49,7 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.InvalidReview: (422, "Grades must cover exactly the answers waiting for review and stay within question points"),
     exc.NotificationNotFound: (404, "Notification not found"),
     exc.CertificateNotFound: (404, "Certificate not found"),
+    exc.ReportAccessDenied: (403, "You cannot access this report"),
 }
 
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -6,7 +6,10 @@ from app.database import Base
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
-    __table_args__ = (UniqueConstraint("student_id", "course_id", name="uq_enrollment_student_course"),)
+    __table_args__ = (
+        UniqueConstraint("student_id", "course_id", name="uq_enrollment_student_course"),
+        Index("ix_enrollments_course_status", "course_id", "status"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
@@ -31,6 +34,7 @@ class Enrollment(Base):
 
 class Payment(Base):
     __tablename__ = "payments"
+    __table_args__ = (Index("ix_payments_status_created", "status", "created_at"),)
 
     id = Column(Integer, primary_key=True, index=True)
     enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False, index=True)
