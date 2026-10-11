@@ -6,7 +6,7 @@ from app.exceptions import LessonLocked, LessonNotFound
 from app.models.catalog import Lesson
 from app.models.user import User
 from app.repository import curriculum_repository, enrollment_repository
-from app.services.access import can_manage_course
+from app.services.access import can_manage_course, can_view_course
 
 
 class LessonContent(ABC):
@@ -35,11 +35,10 @@ class LessonAccessProxy(LessonContent):
     def load(self) -> Lesson:
         lesson = self._real.load()
         course = lesson.module.course
-        is_manager = can_manage_course(course, self._viewer)
 
-        if course.status != "published" and not is_manager:
+        if not can_view_course(self._db, course, self._viewer):
             raise LessonNotFound()
-        if is_manager or lesson.is_preview:
+        if can_manage_course(course, self._viewer) or lesson.is_preview:
             return lesson
         if self._viewer is not None and enrollment_repository.has_access(self._db, self._viewer.id, course.id):
             return lesson

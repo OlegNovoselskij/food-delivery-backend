@@ -111,3 +111,7 @@ class PaymentDeclined(Exception):
 
 class PaymentRefundFailed(Exception):
     pass
+
+
+class EnrollmentNotActive(Exception):
+    pass

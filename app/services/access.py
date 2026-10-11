@@ -3,11 +3,23 @@ from sqlalchemy.orm import Session
 from app.exceptions import CourseNotFound, LessonNotFound, ModuleNotFound, NotCourseOwner
 from app.models.catalog import Course, Lesson, Module
 from app.models.user import User
-from app.repository import course_repository, curriculum_repository
+from app.repository import course_repository, curriculum_repository, enrollment_repository
 
 
 def can_manage_course(course: Course, user: User | None) -> bool:
     return user is not None and (user.role == "admin" or course.teacher_id == user.id)
+
+
+def can_view_course(db: Session, course: Course, viewer: User | None) -> bool:
+    if can_manage_course(course, viewer):
+        return True
+    if course.status == "published":
+        return True
+    return (
+        course.status == "archived"
+        and viewer is not None
+        and enrollment_repository.has_access(db, viewer.id, course.id)
+    )
 
 
 def get_course_for_edit(db: Session, course_id: int, user: User) -> Course:

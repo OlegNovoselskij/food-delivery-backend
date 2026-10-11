@@ -11,7 +11,7 @@ from app.models.catalog import Course
 from app.models.user import User
 from app.repository import category_repository, course_repository, curriculum_repository, media_repository
 from app.schemas.course import CourseCreate, CourseFilters, CourseUpdate
-from app.services.access import can_manage_course, get_course_for_edit
+from app.services.access import can_view_course, get_course_for_edit
 from app.storage import S3Storage
 
 # allowed status transitions: current status -> possible next statuses
@@ -35,7 +35,7 @@ def get_course_for_viewer(db: Session, course_id: int, viewer: User | None) -> C
     course = course_repository.get_by_id(db, course_id)
     if course is None:
         raise CourseNotFound()
-    if course.status != "published" and not can_manage_course(course, viewer):
+    if not can_view_course(db, course, viewer):
         raise CourseNotFound()  # 404 instead of 403: do not reveal that someone else's draft exists
     return course
 

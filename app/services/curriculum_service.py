@@ -6,7 +6,7 @@ from app.models.user import User
 from app.patterns.proxy.lesson_access import DatabaseLessonContent, LessonAccessProxy
 from app.repository import curriculum_repository, enrollment_repository, media_repository
 from app.schemas.curriculum import LessonCreate, LessonUpdate, ModuleCreate, ModuleUpdate
-from app.services.access import can_manage_course, get_course_for_edit, get_lesson_for_edit, get_module_for_edit
+from app.services.access import can_view_course, get_course_for_edit, get_lesson_for_edit, get_module_for_edit
 from app.storage import S3Storage
 
 
@@ -26,7 +26,7 @@ def _apply_order(items: list, ids: list[int]) -> None:
 
 def get_program(db: Session, course_id: int, viewer: User | None) -> Course:
     course = curriculum_repository.get_program_course(db, course_id)
-    if course is None or (course.status != "published" and not can_manage_course(course, viewer)):
+    if course is None or not can_view_course(db, course, viewer):
         raise CourseNotFound()
     return course
 

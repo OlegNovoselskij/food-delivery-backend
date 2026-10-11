@@ -32,6 +32,7 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.PaymentNotRequired: (409, "This enrollment does not need a payment"),
     exc.PaymentDeclined: (402, "Payment was declined"),
     exc.PaymentRefundFailed: (502, "Refund failed, try again later"),
+    exc.EnrollmentNotActive: (409, "Progress can only be changed while the enrollment is active"),
 }
 
 
