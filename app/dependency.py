@@ -1,15 +1,17 @@
 from functools import lru_cache
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from app import config
+from app import config, rate_limit
+from app.cache import catalog_cache
 from app.database import get_db
 from app.models.user import User
 from app.repository import user_repository
 from app.patterns.adapters.payment_gateway import MockPaymentGateway, PaymentGateway
+from app.patterns.proxy.catalog_cache import CachingCatalogProxy, CatalogReader, DatabaseCatalogReader
 from app.security import decode_access_token
 from app.storage import S3Storage
 
@@ -72,3 +74,27 @@ def get_storage() -> S3Storage:
 @lru_cache
 def get_payment_gateway() -> PaymentGateway:
     return MockPaymentGateway()
+
+
+@lru_cache
+def get_catalog_reader() -> CatalogReader:
+    return CachingCatalogProxy(DatabaseCatalogReader(), catalog_cache)
+
+
+def client_ip(request: Request) -> str:
+    # request.client already honours the proxy headers uvicorn is configured to trust
+    return request.client.host if request.client else "unknown"
+
+
+def limit_by_ip(name: str, *, limit: int, window_seconds: int):
+    def dependency(request: Request) -> None:
+        rate_limit.hit(f"rl:{name}:ip:{client_ip(request)}", limit, window_seconds)
+
+    return dependency
+
+
+def limit_by_user(name: str, *, limit: int, window_seconds: int):
+    def dependency(user: User = Depends(get_current_user)) -> None:
+        rate_limit.hit(f"rl:{name}:user:{user.id}", limit, window_seconds)
+
+    return dependency

@@ -10,7 +10,9 @@ _KEY = "after_commit_hooks"
 
 
 def run_after_commit(db: Session, hook: Callable[[], None]) -> None:
-    db.info.setdefault(_KEY, []).append(hook)
+    hooks = db.info.setdefault(_KEY, [])
+    if hook not in hooks:
+        hooks.append(hook)
 
 
 @event.listens_for(Session, "after_commit")

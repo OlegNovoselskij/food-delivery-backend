@@ -5,11 +5,13 @@ from functools import partial
 from sqlalchemy.orm import Session
 
 from app import realtime
+from app.cache import catalog_cache
 from app.models.enrollment import Certificate
 from app.models.notification import Notification
 from app.patterns.observer.after_commit import run_after_commit
 from app.patterns.observer.events import (
     AttemptSubmitted,
+    CatalogChanged,
     CourseCompleted,
     DomainEvent,
     PaymentSucceeded,
@@ -95,3 +97,8 @@ class NotificationObserver:
                     }
                 ]
         return []
+
+
+class CacheInvalidationObserver:
+    def on_catalog_changed(self, db: Session, event: CatalogChanged) -> None:
+        run_after_commit(db, catalog_cache.invalidate)

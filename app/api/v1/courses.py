@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependency import get_optional_user, get_storage, require_role
+from app.dependency import get_catalog_reader, get_optional_user, get_storage, limit_by_ip, require_role
 from app.models.user import User
+from app.patterns.proxy.catalog_cache import CatalogReader
 from app.schemas.course import CourseCreate, CourseFilters, CourseOut, CoursePage, CourseUpdate
 from app.services import course_service
 from app.storage import S3Storage
@@ -13,10 +14,18 @@ from app.storage import S3Storage
 router = APIRouter(prefix="/courses", tags=["courses"])
 
 
-@router.get("", response_model=CoursePage)
-def list_courses(filters: Annotated[CourseFilters, Query()], db: Session = Depends(get_db)):
-    items, total = course_service.search_courses(db, filters)
-    return {"items": items, "total": total, "page": filters.page, "size": filters.size}
+@router.get(
+    "",
+    response_model=CoursePage,
+    dependencies=[Depends(limit_by_ip("catalog", limit=120, window_seconds=60))],
+)
+def list_courses(
+    filters: Annotated[CourseFilters, Query()],
+    db: Session = Depends(get_db),
+    catalog: CatalogReader = Depends(get_catalog_reader),
+):
+    result = catalog.list_courses(db, filters)
+    return Response(content=result.body, media_type="application/json", headers={"X-Cache": result.cache})
 
 
 # NOTE: "/mine" must be declared BEFORE "/{course_id}", otherwise "mine" is parsed as an integer id
@@ -30,8 +39,10 @@ def get_course(
     course_id: int,
     viewer: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
+    catalog: CatalogReader = Depends(get_catalog_reader),
 ):
-    return course_service.get_course_for_viewer(db, course_id, viewer)
+    result = catalog.get_course(db, course_id, viewer)
+    return Response(content=result.body, media_type="application/json", headers={"X-Cache": result.cache})
 
 
 @router.post("", response_model=CourseOut, status_code=status.HTTP_201_CREATED)

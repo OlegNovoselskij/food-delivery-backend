@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependency import get_current_user, get_payment_gateway
+from app.dependency import get_current_user, get_payment_gateway, limit_by_user
 from app.models.user import User
 from app.patterns.adapters.payment_gateway import PaymentGateway
 from app.schemas.enrollment import EnrollmentFilters, EnrollmentOut, PayRequest
@@ -33,7 +33,11 @@ def get_enrollment(enrollment_id: int, user: User = Depends(get_current_user), d
     return enrollment_service.get_one(db, enrollment_id, user)
 
 
-@router.post("/enrollments/{enrollment_id}/pay", response_model=EnrollmentOut)
+@router.post(
+    "/enrollments/{enrollment_id}/pay",
+    response_model=EnrollmentOut,
+    dependencies=[Depends(limit_by_user("pay", limit=5, window_seconds=60))],
+)
 def pay(
     enrollment_id: int,
     data: PayRequest,

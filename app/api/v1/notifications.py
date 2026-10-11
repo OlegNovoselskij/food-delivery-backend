@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app import config
 from app.database import get_db
-from app.dependency import get_current_user
+from app.dependency import get_current_user, limit_by_user
 from app.models.user import User
 from app.realtime import channel_for
 from app.redis_client import get_async_redis
@@ -57,7 +57,11 @@ def mark_read(notification_id: int, user: User = Depends(get_current_user), db: 
     return notification_service.mark_read(db, notification_id, user)
 
 
-@router.post("/ws/ticket", response_model=WsTicketOut)
+@router.post(
+    "/ws/ticket",
+    response_model=WsTicketOut,
+    dependencies=[Depends(limit_by_user("ws-ticket", limit=30, window_seconds=60))],
+)
 def ws_ticket(user: User = Depends(get_current_user)):
     # a browser cannot send the Authorization header with a WebSocket, and a token in the URL ends up in logs:
     # so the client trades its token for a short-lived one-time ticket first

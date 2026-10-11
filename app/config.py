@@ -43,3 +43,8 @@ CERTIFICATE_FONT_PATH = os.getenv("CERTIFICATE_FONT_PATH", "/usr/share/fonts/tru
 CERTIFICATE_FONT_BOLD_PATH = os.getenv(
     "CERTIFICATE_FONT_BOLD_PATH", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 )
+
+CATALOG_CACHE_TTL_SECONDS = int(os.getenv("CATALOG_CACHE_TTL_SECONDS", "60"))
+RATE_LIMITS_ENABLED = os.getenv("RATE_LIMITS_ENABLED", "true").lower() == "true"
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCK_SECONDS = 15 * 60

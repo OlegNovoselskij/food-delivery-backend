@@ -9,6 +9,8 @@ from app.exceptions import (
 )
 from app.models.catalog import Course
 from app.models.user import User
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import CatalogChanged
 from app.repository import category_repository, course_repository, curriculum_repository, media_repository
 from app.schemas.course import CourseCreate, CourseFilters, CourseUpdate
 from app.services.access import can_view_course, get_course_for_edit
@@ -62,6 +64,7 @@ def update_course(db: Session, course_id: int, user: User, data: CourseUpdate) -
 
     for field, value in changes.items():
         setattr(course, field, value)
+    event_bus.publish(db, CatalogChanged(reason="course_updated"))
     db.commit()
     return course_repository.get_by_id(db, course_id)
 
@@ -73,6 +76,7 @@ def change_status(db: Session, course_id: int, user: User, target: str) -> Cours
     if target == "published" and curriculum_repository.count_lessons(db, course_id) == 0:
         raise CourseIncomplete()
     course.status = target
+    event_bus.publish(db, CatalogChanged(reason="course_updated"))
     db.commit()
     return course_repository.get_by_id(db, course_id)
 

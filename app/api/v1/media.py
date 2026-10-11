@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependency import get_optional_user, get_storage, require_role
+from app.dependency import get_optional_user, get_storage, limit_by_user, require_role
 from app.models.user import User
 from app.schemas.curriculum import LessonOut, MaterialOut
 from app.schemas.media import (
@@ -21,7 +21,11 @@ router = APIRouter(tags=["media"])
 staff_only = require_role("teacher", "admin")
 
 
-@router.post("/lessons/{lesson_id}/video/upload-url", response_model=UploadInstructions)
+@router.post(
+    "/lessons/{lesson_id}/video/upload-url",
+    response_model=UploadInstructions,
+    dependencies=[Depends(limit_by_user("upload-url", limit=30, window_seconds=3600))],
+)
 def video_upload_url(
     lesson_id: int,
     data: VideoUploadRequest,
@@ -64,7 +68,11 @@ def video_url(
     return media_service.get_video_url(db, lesson_id, viewer, storage)
 
 
-@router.post("/lessons/{lesson_id}/materials/upload-url", response_model=UploadInstructions)
+@router.post(
+    "/lessons/{lesson_id}/materials/upload-url",
+    response_model=UploadInstructions,
+    dependencies=[Depends(limit_by_user("upload-url", limit=30, window_seconds=3600))],
+)
 def material_upload_url(
     lesson_id: int,
     data: MaterialUploadRequest,

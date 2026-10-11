@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import CategoryAlreadyExists, CategoryInUse, CategoryNotFound
 from app.models.catalog import Category
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import CatalogChanged
 from app.repository import category_repository
 from app.schemas.category import CategoryCreate, CategoryUpdate
 
@@ -35,6 +37,7 @@ def update_category(db: Session, category_id: int, data: CategoryUpdate) -> Cate
         raise CategoryAlreadyExists()
 
     category.name = data.name
+    event_bus.publish(db, CatalogChanged(reason="category_renamed"))
     try:
         db.commit()
     except IntegrityError:

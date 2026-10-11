@@ -42,3 +42,8 @@ class CourseCompleted(DomainEvent):
     student_id: int
     course_id: int
     course_title: str
+
+
+@dataclass(frozen=True)
+class CatalogChanged(DomainEvent):
+    reason: str

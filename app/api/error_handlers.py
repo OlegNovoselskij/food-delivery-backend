@@ -61,6 +61,15 @@ def _make_handler(status_code: int, detail: str):
     return handler
 
 
+async def _rate_limit_handler(request: Request, error: exc.RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests, try again later", "retry_after": error.retry_after},
+        headers={"Retry-After": str(error.retry_after)},
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     for error_class, (status_code, detail) in ERROR_MAP.items():
         app.add_exception_handler(error_class, _make_handler(status_code, detail))
+    app.add_exception_handler(exc.RateLimitExceeded, _rate_limit_handler)

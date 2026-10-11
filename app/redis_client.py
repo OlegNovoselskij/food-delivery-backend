@@ -1,9 +1,22 @@
+import time
 from functools import lru_cache
 
 import redis
 import redis.asyncio as redis_async
 
 from app import config
+
+_BACKOFF_SECONDS = 10
+_down_until = 0.0
+
+
+def is_down() -> bool:
+    return time.monotonic() < _down_until
+
+
+def mark_down() -> None:
+    global _down_until
+    _down_until = time.monotonic() + _BACKOFF_SECONDS
 
 
 @lru_cache
