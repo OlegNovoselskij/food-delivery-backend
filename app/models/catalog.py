@@ -64,6 +64,14 @@ class Module(Base):
     def has_quiz(self) -> bool:
         return self.quiz is not None
 
+    @property
+    def quiz_id(self) -> int | None:
+        return self.quiz.id if self.quiz is not None else None
+
+    @property
+    def quiz_questions_count(self) -> int:
+        return len(self.quiz.questions) if self.quiz is not None else 0
+
 
 class Lesson(Base):
     __tablename__ = "lessons"

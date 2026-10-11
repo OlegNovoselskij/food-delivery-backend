@@ -2,6 +2,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.models.catalog import Course, Lesson, Module
+from app.models.quiz import Quiz
 
 
 def get_program_course(db: Session, course_id: int) -> Course | None:
@@ -9,7 +10,7 @@ def get_program_course(db: Session, course_id: int) -> Course | None:
         db.query(Course)
         .options(
             selectinload(Course.modules).selectinload(Module.lessons),
-            selectinload(Course.modules).selectinload(Module.quiz),
+            selectinload(Course.modules).selectinload(Module.quiz).selectinload(Quiz.questions),
         )
         .populate_existing()
         .filter(Course.id == course_id)

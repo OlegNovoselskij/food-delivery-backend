@@ -1,4 +1,4 @@
-from tests.helpers import API, auth, build_course, create_user
+from tests.helpers import API, add_quiz, auth, build_course, create_user
 
 
 def test_only_teachers_create_courses(client, student, category):
@@ -79,3 +79,15 @@ def test_the_catalog_is_cached_and_invalidated_on_change(client, teacher, catego
     client.patch(f"{API}/courses/{course_id}", headers=auth(teacher), json={"title": "New title"})
     after = client.get(f"{API}/courses")
     assert after.headers["X-Cache"] == "MISS" and after.json()["items"][0]["title"] == "New title"
+
+
+def test_the_program_reports_the_quiz_of_a_module(client, teacher, category):
+    course = build_course(client, teacher, category.id)
+    before = client.get(f"{API}/courses/{course['course_id']}/program").json()["modules"][0]
+    assert before["has_quiz"] is False and before["quiz_id"] is None and before["quiz_questions_count"] == 0
+
+    quiz = add_quiz(client, teacher, course["module_id"])
+    after = client.get(f"{API}/courses/{course['course_id']}/program").json()["modules"][0]
+    assert after["has_quiz"] is True
+    assert after["quiz_id"] == quiz["quiz_id"]
+    assert after["quiz_questions_count"] == 3

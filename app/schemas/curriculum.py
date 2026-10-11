@@ -83,6 +83,8 @@ class ModuleOut(BaseModel):
     title: str
     position: int
     has_quiz: bool
+    quiz_id: int | None
+    quiz_questions_count: int
     lessons: list[LessonSummary]
 
 
