@@ -160,6 +160,8 @@ class CourseAdmin(SecureView, model=Course):
         Course.category,
         Course.status,
         Course.price,
+        Course.rating_avg,
+        Course.reviews_count,
         Course.created_at,
     ]
     column_searchable_list = [Course.title]

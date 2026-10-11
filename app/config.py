@@ -75,3 +75,7 @@ EMAIL_POLL_SECONDS = int(os.getenv("EMAIL_POLL_SECONDS", "2"))
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_TEST_PAGE_ENABLED = os.getenv("GOOGLE_TEST_PAGE_ENABLED", "false").lower() == "true"
+
+APP_ENV = os.getenv("APP_ENV", "development")  # development | production
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_FORMAT = os.getenv("LOG_FORMAT", "text")  # text | json

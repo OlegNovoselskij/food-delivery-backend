@@ -1,8 +1,9 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.admin import setup_admin
-from app.api import dev_pages
+from app.api import dev_pages, health
 from app.api.error_handlers import register_error_handlers
 from app.api.v1 import (
     auth,
@@ -17,37 +18,51 @@ from app.api.v1 import (
     quizzes,
     recommendations,
     reports,
+    reviews,
     users,
 )
+from app.logging_config import configure_logging
+from app.middleware import RequestContextMiddleware
 from app.patterns.observer.subscribers import register_subscribers
 
-app = FastAPI(title="Online Courses API")
+configure_logging()
 
-register_subscribers()
+app = FastAPI(title="Online Courses API", version="1.0.0")
 
 register_error_handlers(app)
+register_subscribers()
 
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
-app.include_router(categories.router, prefix="/api/v1")
-app.include_router(courses.router, prefix="/api/v1")
-app.include_router(curriculum.router, prefix="/api/v1")
-app.include_router(media.router, prefix="/api/v1")
-app.include_router(enrollments.router, prefix="/api/v1")
-app.include_router(learning.router, prefix="/api/v1")
-app.include_router(quizzes.router, prefix="/api/v1")
-app.include_router(notifications.router, prefix="/api/v1")
-app.include_router(certificates.router, prefix="/api/v1")
-app.include_router(reports.router, prefix="/api/v1")
-app.include_router(recommendations.router, prefix="/api/v1")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.ALLOWED_ORIGINS,
+    allow_credentials=False,  # authentication is a bearer token in a header, never a cookie
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-Cache", "Retry-After", "Content-Disposition"],
+    max_age=600,
+)
+app.add_middleware(RequestContextMiddleware)  # added last = outermost: it sees every request
 
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
-
-
-setup_admin(app)
+app.include_router(health.router)
+for module in (
+    auth,
+    users,
+    categories,
+    courses,
+    curriculum,
+    media,
+    enrollments,
+    learning,
+    quizzes,
+    notifications,
+    certificates,
+    reviews,
+    reports,
+    recommendations,
+):
+    app.include_router(module.router, prefix="/api/v1")
 
 if config.GOOGLE_TEST_PAGE_ENABLED:  # a development helper, never enabled in production
     app.include_router(dev_pages.router)
+
+setup_admin(app)

@@ -7,6 +7,7 @@ from app import config
 from app.database import SessionLocal
 from app.emails.message import EmailSendError, OutgoingEmail
 from app.emails.senders import EmailSender, get_email_sender
+from app.logging_config import configure_logging
 from app.models.user import User
 from app.repository import email_outbox_repository
 
@@ -82,7 +83,7 @@ def cleanup_abandoned_registrations() -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    configure_logging()
     signal.signal(signal.SIGTERM, _request_stop)
     signal.signal(signal.SIGINT, _request_stop)
 

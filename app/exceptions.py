@@ -213,3 +213,11 @@ class GoogleAccountConflict(Exception):
 
 class GoogleLoginUnavailable(Exception):
     pass
+
+
+class ReviewAlreadyExists(Exception):
+    pass
+
+
+class ReviewNotAllowed(Exception):
+    pass

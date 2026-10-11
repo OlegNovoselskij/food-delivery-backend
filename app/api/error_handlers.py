@@ -1,7 +1,12 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app import exceptions as exc
+from app.logging_config import request_id_var
+
+logger = logging.getLogger(__name__)
 
 ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.EmailAlreadyRegistered: (409, "Email already registered"),
@@ -54,6 +59,8 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.CertificateNotFound: (404, "Certificate not found"),
     exc.ReportAccessDenied: (403, "You cannot access this report"),
     exc.ReviewNotFound: (404, "Review not found"),
+    exc.ReviewAlreadyExists: (409, "You have already reviewed this course"),
+    exc.ReviewNotAllowed: (403, "Start learning the course before reviewing it"),
     exc.InvalidCode: (400, "The code is invalid or has expired"),
     exc.InvalidGoogleToken: (401, "Google sign-in failed, please try again"),
     exc.GoogleAccountNotSupported: (
@@ -82,7 +89,16 @@ async def _rate_limit_handler(request: Request, error: exc.RateLimitExceeded) ->
     )
 
 
+async def _unhandled_error_handler(request: Request, error: Exception) -> JSONResponse:
+    logger.exception("Unhandled error: %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "request_id": request_id_var.get()},
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     for error_class, (status_code, detail) in ERROR_MAP.items():
         app.add_exception_handler(error_class, _make_handler(status_code, detail))
     app.add_exception_handler(exc.RateLimitExceeded, _rate_limit_handler)
+    app.add_exception_handler(Exception, _unhandled_error_handler)

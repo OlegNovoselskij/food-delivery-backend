@@ -35,6 +35,9 @@ class S3Storage:
             s3={"addressing_style": "path"},
             request_checksum_calculation="when_required",
             response_checksum_validation="when_required",
+            connect_timeout=5,
+            read_timeout=15,
+            retries={"max_attempts": 2},
         )
         common = dict(
             aws_access_key_id=access_key,
@@ -44,6 +47,15 @@ class S3Storage:
         )
         self._client = boto3.client("s3", endpoint_url=endpoint_url, **common)
         self._signer = boto3.client("s3", endpoint_url=public_endpoint_url, **common)
+
+    def is_reachable(self) -> bool:
+        try:
+            self._client.head_bucket(Bucket=self._bucket)
+        except ClientError as error:
+            return _error_code(error) in _NOT_FOUND_CODES  # a missing bucket is created lazily: the storage answers
+        except BotoCoreError:
+            return False
+        return True
 
     def ensure_bucket(self) -> None:
         try:
