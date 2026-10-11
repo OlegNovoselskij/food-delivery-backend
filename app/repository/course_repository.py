@@ -17,7 +17,7 @@ def _with_relations(query):
 
 
 def _escape_like(value: str) -> str:
-    # so users cannot use "%" or "_" as wildcards
+    # escape LIKE wildcards so users cannot use "%" or "_" as patterns
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 

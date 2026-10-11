@@ -1,12 +1,17 @@
+from functools import lru_cache
+
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from app import config
 from app.database import get_db
 from app.models.user import User
 from app.repository import user_repository
+from app.patterns.adapters.payment_gateway import MockPaymentGateway, PaymentGateway
 from app.security import decode_access_token
+from app.storage import S3Storage
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -50,3 +55,20 @@ def require_role(*roles: str):
         return user
 
     return checker
+
+
+@lru_cache
+def get_storage() -> S3Storage:
+    return S3Storage(
+        endpoint_url=config.S3_ENDPOINT_URL,
+        public_endpoint_url=config.S3_PUBLIC_ENDPOINT_URL,
+        access_key=config.S3_ACCESS_KEY,
+        secret_key=config.S3_SECRET_KEY,
+        bucket=config.S3_BUCKET,
+        region=config.S3_REGION,
+    )
+
+
+@lru_cache
+def get_payment_gateway() -> PaymentGateway:
+    return MockPaymentGateway()

@@ -2,35 +2,24 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import (
     CategoryNotFound,
+    CourseIncomplete,
     CourseNotDeletable,
     CourseNotFound,
     InvalidCourseTransition,
-    NotCourseOwner,
 )
 from app.models.catalog import Course
 from app.models.user import User
-from app.repository import category_repository, course_repository
+from app.repository import category_repository, course_repository, curriculum_repository, media_repository
 from app.schemas.course import CourseCreate, CourseFilters, CourseUpdate
+from app.services.access import can_manage_course, get_course_for_edit
+from app.storage import S3Storage
 
-# allowed status transitions
+# allowed status transitions: current status -> possible next statuses
 ALLOWED_TRANSITIONS = {
     "draft": {"published"},
     "published": {"archived"},
     "archived": {"published"},
 }
-
-
-def _can_manage(course: Course, user: User) -> bool:
-    return user.role == "admin" or course.teacher_id == user.id
-
-
-def _get_course_for_edit(db: Session, course_id: int, user: User) -> Course:
-    course = course_repository.get_by_id(db, course_id)
-    if course is None:
-        raise CourseNotFound()
-    if not _can_manage(course, user):
-        raise NotCourseOwner()
-    return course
 
 
 def search_courses(db: Session, filters: CourseFilters) -> tuple[list[Course], int]:
@@ -46,8 +35,8 @@ def get_course_for_viewer(db: Session, course_id: int, viewer: User | None) -> C
     course = course_repository.get_by_id(db, course_id)
     if course is None:
         raise CourseNotFound()
-    if course.status != "published" and not (viewer and _can_manage(course, viewer)):
-        raise CourseNotFound()  # 404 instead of 403: someone else's draft must not be revealed
+    if course.status != "published" and not can_manage_course(course, viewer):
+        raise CourseNotFound()  # 404 instead of 403: do not reveal that someone else's draft exists
     return course
 
 
@@ -65,7 +54,7 @@ def create_course(db: Session, teacher: User, data: CourseCreate) -> Course:
 
 
 def update_course(db: Session, course_id: int, user: User, data: CourseUpdate) -> Course:
-    course = _get_course_for_edit(db, course_id, user)
+    course = get_course_for_edit(db, course_id, user)
     changes = data.model_dump(exclude_unset=True)
 
     if "category_id" in changes and category_repository.get_by_id(db, changes["category_id"]) is None:
@@ -78,17 +67,21 @@ def update_course(db: Session, course_id: int, user: User, data: CourseUpdate) -
 
 
 def change_status(db: Session, course_id: int, user: User, target: str) -> Course:
-    course = _get_course_for_edit(db, course_id, user)
+    course = get_course_for_edit(db, course_id, user)
     if target not in ALLOWED_TRANSITIONS[course.status]:
         raise InvalidCourseTransition()
+    if target == "published" and curriculum_repository.count_lessons(db, course_id) == 0:
+        raise CourseIncomplete()
     course.status = target
     db.commit()
     return course_repository.get_by_id(db, course_id)
 
 
-def delete_course(db: Session, course_id: int, user: User) -> None:
-    course = _get_course_for_edit(db, course_id, user)
+def delete_course(db: Session, course_id: int, user: User, storage: S3Storage) -> None:
+    course = get_course_for_edit(db, course_id, user)
     if course.status != "draft":
         raise CourseNotDeletable()
+    keys = media_repository.storage_keys(db, course_id=course.id)
     course_repository.delete(db, course)
     db.commit()
+    storage.delete_many(keys)

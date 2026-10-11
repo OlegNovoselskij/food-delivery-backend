@@ -17,24 +17,30 @@ class Enrollment(Base):
 
     student = relationship("User")
     course = relationship("Course", back_populates="enrollments")
-    payment = relationship("Payment", back_populates="enrollment", uselist=False, cascade="all, delete-orphan")
+    payments = relationship(
+        "Payment", back_populates="enrollment", cascade="all, delete-orphan", order_by="Payment.id"
+    )
     progress = relationship("LessonProgress", back_populates="enrollment", cascade="all, delete-orphan")
     attempts = relationship("QuizAttempt", back_populates="enrollment", cascade="all, delete-orphan")
     certificate = relationship("Certificate", back_populates="enrollment", uselist=False, cascade="all, delete-orphan")
+
+    @property
+    def payment(self) -> "Payment | None":
+        return self.payments[-1] if self.payments else None
 
 
 class Payment(Base):
     __tablename__ = "payments"
 
     id = Column(Integer, primary_key=True, index=True)
-    enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), unique=True, nullable=False)
+    enrollment_id = Column(Integer, ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False, index=True)
     amount = Column(Numeric(10, 2), nullable=False)
     method = Column(String, nullable=False)
     status = Column(String, nullable=False, default="pending")  # pending, succeeded, failed, refunded
     transaction_id = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    enrollment = relationship("Enrollment", back_populates="payment")
+    enrollment = relationship("Enrollment", back_populates="payments")
 
 
 class LessonProgress(Base):

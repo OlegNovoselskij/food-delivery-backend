@@ -9,3 +9,4 @@ PyJWT
 bcrypt
 email-validator
 python-multipart
+boto3

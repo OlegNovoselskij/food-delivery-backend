@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, Numeric, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Text, Boolean, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -47,6 +47,10 @@ class Module(Base):
     lessons = relationship("Lesson", back_populates="module", cascade="all, delete-orphan", order_by="Lesson.position")
     quiz = relationship("Quiz", back_populates="module", uselist=False, cascade="all, delete-orphan")
 
+    @property
+    def has_quiz(self) -> bool:
+        return self.quiz is not None
+
 
 class Lesson(Base):
     __tablename__ = "lessons"
@@ -55,7 +59,8 @@ class Lesson(Base):
     module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String, nullable=False)
     lesson_type = Column(String, nullable=False, default="video")  # video, article
-    video_url = Column(String)
+    video_key = Column(String)
+    video_size = Column(BigInteger)
     content = Column(Text)
     duration_minutes = Column(Integer)
     position = Column(Integer, nullable=False, default=0)
@@ -64,6 +69,10 @@ class Lesson(Base):
     module = relationship("Module", back_populates="lessons")
     materials = relationship("LessonMaterial", back_populates="lesson", cascade="all, delete-orphan")
 
+    @property
+    def has_video(self) -> bool:
+        return self.video_key is not None
+
 
 class LessonMaterial(Base):
     __tablename__ = "lesson_materials"
@@ -71,6 +80,9 @@ class LessonMaterial(Base):
     id = Column(Integer, primary_key=True, index=True)
     lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String, nullable=False)
-    file_url = Column(String, nullable=False)
+    file_key = Column(String, nullable=False)
+    original_filename = Column(String, nullable=False)
+    content_type = Column(String)
+    size_bytes = Column(BigInteger)
 
     lesson = relationship("Lesson", back_populates="materials")

@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependency import get_optional_user, require_role
+from app.dependency import get_optional_user, get_storage, require_role
 from app.models.user import User
 from app.schemas.course import CourseCreate, CourseFilters, CourseOut, CoursePage, CourseUpdate
 from app.services import course_service
+from app.storage import S3Storage
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
@@ -18,7 +19,7 @@ def list_courses(filters: Annotated[CourseFilters, Query()], db: Session = Depen
     return {"items": items, "total": total, "page": filters.page, "size": filters.size}
 
 
-# NOTE: "/mine" must be declared before "/{course_id}", otherwise "mine" is parsed as an int
+# NOTE: "/mine" must be declared BEFORE "/{course_id}", otherwise "mine" is parsed as an integer id
 @router.get("/mine", response_model=list[CourseOut])
 def my_courses(teacher: User = Depends(require_role("teacher")), db: Session = Depends(get_db)):
     return course_service.list_my_courses(db, teacher)
@@ -75,6 +76,7 @@ def delete_course(
     course_id: int,
     user: User = Depends(require_role("teacher", "admin")),
     db: Session = Depends(get_db),
+    storage: S3Storage = Depends(get_storage),
 ):
-    course_service.delete_course(db, course_id, user)
+    course_service.delete_course(db, course_id, user, storage)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
