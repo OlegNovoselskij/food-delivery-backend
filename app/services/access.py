@@ -1,9 +1,10 @@
 from sqlalchemy.orm import Session
 
-from app.exceptions import CourseNotFound, LessonNotFound, ModuleNotFound, NotCourseOwner
+from app.exceptions import CourseNotFound, LessonNotFound, ModuleNotFound, NotCourseOwner, QuestionNotFound, QuizNotFound
 from app.models.catalog import Course, Lesson, Module
+from app.models.quiz import Question, Quiz
 from app.models.user import User
-from app.repository import course_repository, curriculum_repository, enrollment_repository
+from app.repository import course_repository, curriculum_repository, enrollment_repository, quiz_repository
 
 
 def can_manage_course(course: Course, user: User | None) -> bool:
@@ -47,3 +48,21 @@ def get_lesson_for_edit(db: Session, lesson_id: int, user: User) -> Lesson:
     if not can_manage_course(lesson.module.course, user):
         raise NotCourseOwner()
     return lesson
+
+
+def get_quiz_for_edit(db: Session, quiz_id: int, user: User) -> Quiz:
+    quiz = quiz_repository.get_quiz(db, quiz_id)
+    if quiz is None:
+        raise QuizNotFound()
+    if not can_manage_course(quiz.module.course, user):
+        raise NotCourseOwner()
+    return quiz
+
+
+def get_question_for_edit(db: Session, question_id: int, user: User) -> Question:
+    question = quiz_repository.get_question(db, question_id)
+    if question is None:
+        raise QuestionNotFound()
+    if not can_manage_course(question.quiz.module.course, user):
+        raise NotCourseOwner()
+    return question

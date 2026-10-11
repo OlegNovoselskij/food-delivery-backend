@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.attempt import QuizAttempt
 from app.models.catalog import Lesson, Module
 from app.models.enrollment import LessonProgress
-from app.models.quiz import Quiz
+from app.models.quiz import Question, Quiz
 
 
 def get_progress(db: Session, enrollment_id: int, lesson_id: int) -> LessonProgress | None:
@@ -41,6 +41,18 @@ def passed_quiz_ids(db: Session, enrollment_id: int) -> set[int]:
     rows = (
         db.query(QuizAttempt.quiz_id)
         .filter(QuizAttempt.enrollment_id == enrollment_id, QuizAttempt.passed.is_(True))
+        .distinct()
+        .all()
+    )
+    return {quiz_id for (quiz_id,) in rows}
+
+
+def ready_quiz_ids(db: Session, course_id: int) -> set[int]:
+    rows = (
+        db.query(Quiz.id)
+        .join(Module, Quiz.module_id == Module.id)
+        .join(Question, Question.quiz_id == Quiz.id)
+        .filter(Module.course_id == course_id)
         .distinct()
         .all()
     )
@@ -82,8 +94,9 @@ def course_totals(db: Session, course_ids: list[int]) -> dict[int, tuple[int, in
         .all()
     )
     quiz_rows = (
-        db.query(Module.course_id, func.count(Quiz.id))
+        db.query(Module.course_id, func.count(func.distinct(Quiz.id)))
         .join(Quiz, Quiz.module_id == Module.id)
+        .join(Question, Question.quiz_id == Quiz.id)
         .filter(Module.course_id.in_(course_ids))
         .group_by(Module.course_id)
         .all()

@@ -68,7 +68,15 @@ def _load_tree(db: Session, enrollment: Enrollment) -> CourseNode:
         course,
         progress_repository.completed_map(db, enrollment.id),
         progress_repository.passed_quiz_ids(db, enrollment.id),
+        progress_repository.ready_quiz_ids(db, enrollment.course_id),
     )
+
+
+def complete_if_finished(db: Session, enrollment: Enrollment) -> None:
+    if enrollment.status != "active":
+        return
+    if _load_tree(db, enrollment).stats().is_complete:
+        EnrollmentStateMachine(enrollment).complete()
 
 
 def _get_own_locked(db: Session, enrollment_id: int, user: User) -> Enrollment:

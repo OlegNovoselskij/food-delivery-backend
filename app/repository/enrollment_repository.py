@@ -24,7 +24,13 @@ def get_by_id(db: Session, enrollment_id: int) -> Enrollment | None:
 
 
 def get_by_id_for_update(db: Session, enrollment_id: int) -> Enrollment | None:
-    return db.query(Enrollment).filter(Enrollment.id == enrollment_id).with_for_update().first()
+    return (
+        db.query(Enrollment)
+        .populate_existing()
+        .filter(Enrollment.id == enrollment_id)
+        .with_for_update()
+        .first()
+    )
 
 
 def get_by_student_and_course(db: Session, student_id: int, course_id: int) -> Enrollment | None:

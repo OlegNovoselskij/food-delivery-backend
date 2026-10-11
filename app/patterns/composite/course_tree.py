@@ -119,14 +119,17 @@ class CourseNode(CompositeNode):
 
 
 def build_course_tree(
-    course: Course, completed: dict[int, datetime], passed_quiz_ids: set[int]
+    course: Course,
+    completed: dict[int, datetime],
+    passed_quiz_ids: set[int],
+    ready_quiz_ids: set[int],
 ) -> CourseNode:
     tree = CourseNode(course)
     for module in course.modules:
         module_node = ModuleNode(module)
         for lesson in module.lessons:
             module_node.add(LessonNode(lesson, completed.get(lesson.id)))
-        if module.quiz is not None:
+        if module.quiz is not None and module.quiz.id in ready_quiz_ids:
             module_node.add(QuizNode(module.quiz, module.quiz.id in passed_quiz_ids))
         tree.add(module_node)
     return tree

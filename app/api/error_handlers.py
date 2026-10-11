@@ -33,6 +33,20 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.PaymentDeclined: (402, "Payment was declined"),
     exc.PaymentRefundFailed: (502, "Refund failed, try again later"),
     exc.EnrollmentNotActive: (409, "Progress can only be changed while the enrollment is active"),
+    exc.QuizNotFound: (404, "Quiz not found"),
+    exc.QuestionNotFound: (404, "Question not found"),
+    exc.AttemptNotFound: (404, "Attempt not found"),
+    exc.QuizAlreadyExists: (409, "This module already has a quiz"),
+    exc.QuizHasAttempts: (409, "Students already took this quiz, this change is not allowed"),
+    exc.QuizNotReady: (409, "Quiz has no questions yet"),
+    exc.QuizAccessDenied: (403, "Enroll in the course to take this quiz"),
+    exc.AttemptLimitReached: (409, "No attempts left for this quiz"),
+    exc.QuizAlreadyPassed: (409, "You have already passed this quiz"),
+    exc.AttemptAwaitingReview: (409, "Your previous attempt is waiting for the teacher's review"),
+    exc.InvalidAttemptState: (409, "This action is not allowed for the current attempt status"),
+    exc.InvalidAnswers: (422, "Answers do not match the quiz questions"),
+    exc.InvalidQuestion: (422, "Option ids do not belong to this question"),
+    exc.InvalidReview: (422, "Grades must cover exactly the answers waiting for review and stay within question points"),
 }
 
 

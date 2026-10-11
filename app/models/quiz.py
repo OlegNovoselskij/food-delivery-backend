@@ -10,6 +10,7 @@ class Quiz(Base):
     module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), unique=True, nullable=False)
     title = Column(String, nullable=False)
     passing_score = Column(Integer, nullable=False, default=60)  # percent
+    max_attempts = Column(Integer)  # null = unlimited
 
     module = relationship("Module", back_populates="quiz")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan", order_by="Question.position")
@@ -24,9 +25,12 @@ class Question(Base):
     question_type = Column(String, nullable=False, default="single_choice")  # single_choice, multiple_choice, open_text
     points = Column(Integer, nullable=False, default=1)
     position = Column(Integer, nullable=False, default=0)
+    explanation = Column(Text)  # shown to the student after the attempt is finished
 
     quiz = relationship("Quiz", back_populates="questions")
-    options = relationship("AnswerOption", back_populates="question", cascade="all, delete-orphan")
+    options = relationship(
+        "AnswerOption", back_populates="question", cascade="all, delete-orphan", order_by="AnswerOption.id"
+    )
 
 
 class AnswerOption(Base):

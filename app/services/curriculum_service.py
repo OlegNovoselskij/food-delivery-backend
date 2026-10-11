@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
 
-from app.exceptions import CourseHasEnrollments, CourseNotFound, InvalidOrdering
+from app.exceptions import CourseHasEnrollments, CourseNotFound
 from app.models.catalog import Course, Lesson, Module
 from app.models.user import User
 from app.patterns.proxy.lesson_access import DatabaseLessonContent, LessonAccessProxy
 from app.repository import curriculum_repository, enrollment_repository, media_repository
 from app.schemas.curriculum import LessonCreate, LessonUpdate, ModuleCreate, ModuleUpdate
 from app.services.access import can_view_course, get_course_for_edit, get_lesson_for_edit, get_module_for_edit
+from app.services.ordering import apply_order
 from app.storage import S3Storage
 
 
@@ -14,14 +15,6 @@ def _ensure_no_enrollments(db: Session, course_id: int) -> None:
     # deleting content would cascade-delete students' progress
     if enrollment_repository.course_has_enrollments(db, course_id):
         raise CourseHasEnrollments()
-
-
-def _apply_order(items: list, ids: list[int]) -> None:
-    by_id = {item.id: item for item in items}
-    if set(ids) != set(by_id):
-        raise InvalidOrdering()
-    for position, item_id in enumerate(ids):
-        by_id[item_id].position = position
 
 
 def get_program(db: Session, course_id: int, viewer: User | None) -> Course:
@@ -75,7 +68,7 @@ def delete_module(db: Session, module_id: int, user: User, storage: S3Storage) -
 
 def reorder_modules(db: Session, course_id: int, user: User, ids: list[int]) -> Course:
     course = get_course_for_edit(db, course_id, user)
-    _apply_order(curriculum_repository.list_modules(db, course.id), ids)
+    apply_order(curriculum_repository.list_modules(db, course.id), ids)
     db.commit()
     return curriculum_repository.get_program_course(db, course.id)
 
@@ -111,6 +104,6 @@ def delete_lesson(db: Session, lesson_id: int, user: User, storage: S3Storage) -
 
 def reorder_lessons(db: Session, module_id: int, user: User, ids: list[int]) -> Module:
     module = get_module_for_edit(db, module_id, user)
-    _apply_order(list(module.lessons), ids)
+    apply_order(list(module.lessons), ids)
     db.commit()
     return curriculum_repository.get_module(db, module_id)

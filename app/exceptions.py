@@ -115,3 +115,59 @@ class PaymentRefundFailed(Exception):
 
 class EnrollmentNotActive(Exception):
     pass
+
+
+class QuizNotFound(Exception):
+    pass
+
+
+class QuestionNotFound(Exception):
+    pass
+
+
+class AttemptNotFound(Exception):
+    pass
+
+
+class QuizAlreadyExists(Exception):
+    pass
+
+
+class QuizHasAttempts(Exception):
+    pass
+
+
+class QuizNotReady(Exception):
+    pass
+
+
+class QuizAccessDenied(Exception):
+    pass
+
+
+class AttemptLimitReached(Exception):
+    pass
+
+
+class QuizAlreadyPassed(Exception):
+    pass
+
+
+class AttemptAwaitingReview(Exception):
+    pass
+
+
+class InvalidAttemptState(Exception):
+    pass
+
+
+class InvalidAnswers(Exception):
+    pass
+
+
+class InvalidQuestion(Exception):
+    pass
+
+
+class InvalidReview(Exception):
+    pass
