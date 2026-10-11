@@ -21,9 +21,7 @@ def mark_down() -> None:
 
 @lru_cache
 def get_redis() -> redis.Redis:
-    return redis.Redis.from_url(
-        config.VALKEY_URL, decode_responses=True, socket_connect_timeout=1, socket_timeout=2
-    )
+    return redis.Redis.from_url(config.VALKEY_URL, decode_responses=True, socket_connect_timeout=1, socket_timeout=2)
 
 
 @lru_cache

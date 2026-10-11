@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app.exceptions import CourseNotFound, ReportAccessDenied
 from app.patterns.composite.course_tree import ProgressStats
@@ -55,8 +55,15 @@ class TeacherDashboardReport(TeacherReport):
 class LessonFunnelReport(CourseScopedReport):
     name = "lesson-funnel"
     columns = (
-        "module_position", "module_title", "position", "lesson_id", "title",
-        "completed", "completed_percent", "drop_off_percent", "biggest_drop",
+        "module_position",
+        "module_title",
+        "position",
+        "lesson_id",
+        "title",
+        "completed",
+        "completed_percent",
+        "drop_off_percent",
+        "biggest_drop",
     )
 
     def fetch(self, db, user, params) -> ReportResult:
@@ -85,8 +92,16 @@ class LessonFunnelReport(CourseScopedReport):
 class QuizStatsReport(CourseScopedReport):
     name = "quiz-stats"
     columns = (
-        "quiz_id", "title", "module_title", "passing_score", "attempts",
-        "students", "passed_students", "pass_rate", "avg_score", "pending_review",
+        "quiz_id",
+        "title",
+        "module_title",
+        "passing_score",
+        "attempts",
+        "students",
+        "passed_students",
+        "pass_rate",
+        "avg_score",
+        "pending_review",
     )
 
     def fetch(self, db, user, params) -> ReportResult:
@@ -123,13 +138,22 @@ class QuestionStatsReport(CourseScopedReport):
 class CourseStudentsReport(CourseScopedReport):
     name = "course-students"
     columns = (
-        "enrollment_id", "student_id", "name", "status", "enrolled_at", "progress_percent",
-        "lessons_completed", "lessons_total", "quizzes_passed", "quizzes_total",
-        "last_activity_at", "days_inactive",
+        "enrollment_id",
+        "student_id",
+        "name",
+        "status",
+        "enrolled_at",
+        "progress_percent",
+        "lessons_completed",
+        "lessons_total",
+        "quizzes_passed",
+        "quizzes_total",
+        "last_activity_at",
+        "days_inactive",
     )
 
     def fetch(self, db, user, params) -> ReportResult:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         inactive_before = now - timedelta(days=params.inactive_days) if params.inactive_days else None
         export = params.format == "csv"
 

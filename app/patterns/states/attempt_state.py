@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.exceptions import InvalidAttemptState
 from app.models.attempt import QuizAttempt
@@ -26,7 +26,7 @@ class InProgressState(AttemptState):
 
     def submit(self, attempt: QuizAttempt, needs_review: bool) -> None:
         attempt.status = PENDING_REVIEW if needs_review else GRADED
-        attempt.submitted_at = datetime.now(timezone.utc)
+        attempt.submitted_at = datetime.now(UTC)
 
 
 class PendingReviewState(AttemptState):

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
@@ -8,7 +8,7 @@ from app.models.email_code import EmailCode
 
 
 def issue(db: Session, user_id: int, purpose: str, code_hash: str, ttl: timedelta) -> None:
-    expires_at = datetime.now(timezone.utc) + ttl
+    expires_at = datetime.now(UTC) + ttl
     statement = insert(EmailCode).values(
         user_id=user_id, purpose=purpose, code_hash=code_hash, attempts=0, expires_at=expires_at
     )

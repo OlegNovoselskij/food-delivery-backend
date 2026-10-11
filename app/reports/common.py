@@ -3,8 +3,17 @@ from decimal import Decimal
 from app.reports.periods import period_starts
 
 COURSE_COLUMNS = (
-    "course_id", "title", "status", "category", "teacher_name",
-    "students", "completed", "completion_rate", "rating_avg", "reviews_count", "revenue",
+    "course_id",
+    "title",
+    "status",
+    "category",
+    "teacher_name",
+    "students",
+    "completed",
+    "completion_rate",
+    "rating_avg",
+    "reviews_count",
+    "revenue",
 )
 
 
@@ -33,7 +42,4 @@ def course_totals(rows: list[dict]) -> dict:
 
 def fill_series(rows: list[dict], date_from, date_to, group_by: str, empty: dict) -> list[dict]:
     by_period = {row["period"]: row for row in rows}
-    return [
-        by_period.get(start, {"period": start, **empty})
-        for start in period_starts(date_from, date_to, group_by)
-    ]
+    return [by_period.get(start, {"period": start, **empty}) for start in period_starts(date_from, date_to, group_by)]

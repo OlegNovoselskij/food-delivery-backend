@@ -3,7 +3,7 @@ import hmac
 import os
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 import jwt
@@ -29,7 +29,7 @@ def verify_password(password: str, password_hash: str | None) -> bool:
 
 
 def create_access_token(user_id: int, role: str) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
         "role": role,
@@ -46,10 +46,8 @@ def decode_access_token(token: str) -> dict:
     return payload
 
 
-def create_upload_ticket(
-    *, user_id: int, kind: str, lesson_id: int, key: str, content_type: str, filename: str
-) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(seconds=config.UPLOAD_TICKET_TTL_SECONDS)
+def create_upload_ticket(*, user_id: int, kind: str, lesson_id: int, key: str, content_type: str, filename: str) -> str:
+    expire = datetime.now(UTC) + timedelta(seconds=config.UPLOAD_TICKET_TTL_SECONDS)
     payload = {
         "typ": "upload",
         "uid": user_id,
@@ -71,7 +69,7 @@ def decode_upload_ticket(token: str) -> dict:
 
 
 def create_ws_ticket(user_id: int) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(seconds=config.WS_TICKET_TTL_SECONDS)
+    expire = datetime.now(UTC) + timedelta(seconds=config.WS_TICKET_TTL_SECONDS)
     payload = {"typ": "ws", "uid": user_id, "jti": uuid.uuid4().hex, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 

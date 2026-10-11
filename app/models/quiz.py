@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 
@@ -13,7 +14,9 @@ class Quiz(Base):
     max_attempts = Column(Integer)  # null = unlimited
 
     module = relationship("Module", back_populates="quiz")
-    questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan", order_by="Question.position")
+    questions = relationship(
+        "Question", back_populates="quiz", cascade="all, delete-orphan", order_by="Question.position"
+    )
 
 
 class Question(Base):

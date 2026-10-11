@@ -1,6 +1,7 @@
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.database import Base
 
 
@@ -14,15 +15,15 @@ class Enrollment(Base):
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     course_id = Column(Integer, ForeignKey("courses.id"), nullable=False, index=True)
-    status = Column(String, nullable=False, default="pending_payment", index=True)  # pending_payment, active, completed, cancelled
+    status = Column(
+        String, nullable=False, default="pending_payment", index=True
+    )  # pending_payment, active, completed, cancelled
     enrolled_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime(timezone=True))
 
     student = relationship("User")
     course = relationship("Course", back_populates="enrollments")
-    payments = relationship(
-        "Payment", back_populates="enrollment", cascade="all, delete-orphan", order_by="Payment.id"
-    )
+    payments = relationship("Payment", back_populates="enrollment", cascade="all, delete-orphan", order_by="Payment.id")
     progress = relationship("LessonProgress", back_populates="enrollment", cascade="all, delete-orphan")
     attempts = relationship("QuizAttempt", back_populates="enrollment", cascade="all, delete-orphan")
     certificate = relationship("Certificate", back_populates="enrollment", uselist=False, cascade="all, delete-orphan")

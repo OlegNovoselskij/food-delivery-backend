@@ -46,6 +46,7 @@ app.include_router(recommendations.router, prefix="/api/v1")
 def health_check():
     return {"status": "ok"}
 
+
 setup_admin(app)
 
 if config.GOOGLE_TEST_PAGE_ENABLED:  # a development helper, never enabled in production

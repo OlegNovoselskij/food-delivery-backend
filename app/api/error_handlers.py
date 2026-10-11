@@ -46,7 +46,10 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.InvalidAttemptState: (409, "This action is not allowed for the current attempt status"),
     exc.InvalidAnswers: (422, "Answers do not match the quiz questions"),
     exc.InvalidQuestion: (422, "Option ids do not belong to this question"),
-    exc.InvalidReview: (422, "Grades must cover exactly the answers waiting for review and stay within question points"),
+    exc.InvalidReview: (
+        422,
+        "Grades must cover exactly the answers waiting for review and stay within question points",
+    ),
     exc.NotificationNotFound: (404, "Notification not found"),
     exc.CertificateNotFound: (404, "Certificate not found"),
     exc.ReportAccessDenied: (403, "You cannot access this report"),

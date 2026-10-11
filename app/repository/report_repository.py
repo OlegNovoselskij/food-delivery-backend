@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 
 from sqlalchemy import func, literal_column
 from sqlalchemy.orm import Session
@@ -17,7 +17,7 @@ _TRUNC = {"day": "'day'", "week": "'week'", "month": "'month'"}
 
 
 def _day_start(day: date) -> datetime:
-    return datetime.combine(day, time.min, tzinfo=timezone.utc)
+    return datetime.combine(day, time.min, tzinfo=UTC)
 
 
 def _period(column, date_from: date | None, date_to: date | None) -> list:
@@ -216,7 +216,9 @@ def revenue_series(
     revenue, refunded, payments = _money()
     bucket = _bucket(group_by, Payment.created_at)
     query = (
-        db.query(bucket.label("period"), revenue.label("revenue"), refunded.label("refunded"), payments.label("payments"))
+        db.query(
+            bucket.label("period"), revenue.label("revenue"), refunded.label("refunded"), payments.label("payments")
+        )
         .select_from(Payment)
         .join(Enrollment, Payment.enrollment_id == Enrollment.id)
         .join(Course, Enrollment.course_id == Course.id)
@@ -246,7 +248,13 @@ def revenue_breakdown(db: Session, *, by: str, date_from: date | None, date_to: 
 
     revenue, refunded, payments = _money()
     query = (
-        db.query(key.label("id"), label.label("name"), revenue.label("revenue"), refunded.label("refunded"), payments.label("payments"))
+        db.query(
+            key.label("id"),
+            label.label("name"),
+            revenue.label("revenue"),
+            refunded.label("refunded"),
+            payments.label("payments"),
+        )
         .select_from(Payment)
         .join(Enrollment, Payment.enrollment_id == Enrollment.id)
         .join(Course, Enrollment.course_id == Course.id)
@@ -328,7 +336,9 @@ def quiz_stats(db: Session, course_id: int) -> list:
             Quiz.passing_score,
             func.count(QuizAttempt.id).filter(submitted).label("attempts"),
             func.count(QuizAttempt.enrollment_id.distinct()).filter(submitted).label("students"),
-            func.count(QuizAttempt.enrollment_id.distinct()).filter(QuizAttempt.passed.is_(True)).label("passed_students"),
+            func.count(QuizAttempt.enrollment_id.distinct())
+            .filter(QuizAttempt.passed.is_(True))
+            .label("passed_students"),
             func.avg(QuizAttempt.score).filter(QuizAttempt.status == "graded").label("avg_score"),
             func.count(QuizAttempt.id).filter(QuizAttempt.status == "pending_review").label("pending_review"),
         )
@@ -376,7 +386,9 @@ def course_students(
     limit: int,
 ) -> tuple[list, int]:
     last_progress = (
-        db.query(LessonProgress.enrollment_id.label("enrollment_id"), func.max(LessonProgress.completed_at).label("last_at"))
+        db.query(
+            LessonProgress.enrollment_id.label("enrollment_id"), func.max(LessonProgress.completed_at).label("last_at")
+        )
         .group_by(LessonProgress.enrollment_id)
         .subquery()
     )
@@ -396,7 +408,9 @@ def course_students(
         .outerjoin(last_progress, last_progress.c.enrollment_id == Enrollment.id)
         .filter(Enrollment.course_id == course_id)
     )
-    query = query.filter(Enrollment.status == status) if status else query.filter(Enrollment.status.in_(ACCESS_STATUSES))
+    query = (
+        query.filter(Enrollment.status == status) if status else query.filter(Enrollment.status.in_(ACCESS_STATUSES))
+    )
     if inactive_before is not None:
         query = query.filter(Enrollment.status == "active", activity < inactive_before)
 

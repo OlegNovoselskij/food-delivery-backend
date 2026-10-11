@@ -25,11 +25,7 @@ def unread_count(db: Session, user_id: int) -> int:
 
 
 def get_for_user(db: Session, notification_id: int, user_id: int) -> Notification | None:
-    return (
-        db.query(Notification)
-        .filter(Notification.id == notification_id, Notification.user_id == user_id)
-        .first()
-    )
+    return db.query(Notification).filter(Notification.id == notification_id, Notification.user_id == user_id).first()
 
 
 def mark_all_read(db: Session, user_id: int) -> int:

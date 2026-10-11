@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -82,7 +82,11 @@ def register_user(db: Session, data: RegisterRequest) -> None:
             user_repository.add(db, user)
         else:  # an unfinished registration: the latest data wins (there is no password that could be taken over)
             user.name, user.surname, user.phone, user.bio, user.role = (
-                data.name, data.surname, data.phone, data.bio, data.role,
+                data.name,
+                data.surname,
+                data.phone,
+                data.bio,
+                data.role,
             )
         if not _cooldown_active(db, user.id, VERIFY_EMAIL):
             _send_code(db, user, VERIFY_EMAIL)
@@ -146,5 +150,5 @@ def reset_password(db: Session, email: str, code: str, new_password: str) -> Non
         raise InvalidCode()
 
     user.password_hash = security.hash_password(new_password)
-    user.password_changed_at = datetime.now(timezone.utc)  # tokens issued before this moment stop working
+    user.password_changed_at = datetime.now(UTC)  # tokens issued before this moment stop working
     db.commit()

@@ -10,6 +10,5 @@ def recommend(db: Session, user: User, params: RecommendationParams) -> list[dic
     exclude = recommendation_repository.excluded_course_ids(db, user.id)
     strategy = RecommendationStrategyFactory.create(params.strategy)
     return [
-        {"course": item.course, "reason": item.reason}
-        for item in strategy.recommend(db, user, params.limit, exclude)
+        {"course": item.course, "reason": item.reason} for item in strategy.recommend(db, user, params.limit, exclude)
     ]

@@ -1,7 +1,7 @@
 import logging
 import signal
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from app import config
 from app.database import SessionLocal
@@ -52,11 +52,11 @@ def process_one(sender: EmailSender) -> bool:
                 logger.error("Email %s failed for good after %s attempt(s): %s", item.id, item.attempts, error)
             else:
                 delay = _retry_delay(item.attempts)
-                item.next_attempt_at = datetime.now(timezone.utc) + timedelta(seconds=delay)
+                item.next_attempt_at = datetime.now(UTC) + timedelta(seconds=delay)
                 logger.warning("Email %s will be retried in %ss: %s", item.id, delay, error)
         else:
             item.status = "sent"
-            item.sent_at = datetime.now(timezone.utc)
+            item.sent_at = datetime.now(UTC)
             item.last_error = None
             item.text_body = None  # one-time codes must not stay in the database
             item.html_body = None
@@ -72,7 +72,7 @@ def cleanup_abandoned_registrations() -> None:
             .filter(
                 User.email_verified.is_(False),
                 User.password_hash.is_(None),
-                User.created_at < datetime.now(timezone.utc) - ABANDONED_AFTER,
+                User.created_at < datetime.now(UTC) - ABANDONED_AFTER,
             )
             .delete(synchronize_session=False)  # their codes disappear too (ON DELETE CASCADE)
         )

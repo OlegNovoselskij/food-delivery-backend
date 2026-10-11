@@ -1,6 +1,13 @@
 from sqlalchemy.orm import Session
 
-from app.exceptions import CourseNotFound, LessonNotFound, ModuleNotFound, NotCourseOwner, QuestionNotFound, QuizNotFound
+from app.exceptions import (
+    CourseNotFound,
+    LessonNotFound,
+    ModuleNotFound,
+    NotCourseOwner,
+    QuestionNotFound,
+    QuizNotFound,
+)
 from app.models.catalog import Course, Lesson, Module
 from app.models.quiz import Question, Quiz
 from app.models.user import User

@@ -46,9 +46,7 @@ class SmtpEmailSender(EmailSender):
         except smtplib.SMTPAuthenticationError as error:
             raise EmailSendError(f"SMTP authentication failed: {error}") from error
         except smtplib.SMTPResponseException as error:
-            raise EmailSendError(
-                f"SMTP error {error.smtp_code}", permanent=500 <= error.smtp_code < 600
-            ) from error
+            raise EmailSendError(f"SMTP error {error.smtp_code}", permanent=500 <= error.smtp_code < 600) from error
         except (smtplib.SMTPException, OSError) as error:
             raise EmailSendError(f"SMTP connection problem: {error}") from error
         except ValueError as error:

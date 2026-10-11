@@ -14,7 +14,6 @@ from app.exceptions import (
     QuizNotReady,
 )
 from app.models.attempt import AttemptAnswer, QuizAttempt
-from app.models.enrollment import Enrollment
 from app.models.user import User
 from app.patterns.factories.grading_factory import GradingStrategyFactory
 from app.patterns.observer.event_bus import event_bus
@@ -109,7 +108,10 @@ def start_attempt(db: Session, quiz_id: int, student: User) -> dict:
         raise QuizAlreadyPassed()
     if attempt_repository.has_pending(db, enrollment.id, quiz.id):
         raise AttemptAwaitingReview()
-    if quiz.max_attempts is not None and attempt_repository.count_submitted(db, enrollment.id, quiz.id) >= quiz.max_attempts:
+    if (
+        quiz.max_attempts is not None
+        and attempt_repository.count_submitted(db, enrollment.id, quiz.id) >= quiz.max_attempts
+    ):
         raise AttemptLimitReached()
 
     attempt = attempt_repository.add(db, QuizAttempt(enrollment_id=enrollment.id, quiz_id=quiz.id))

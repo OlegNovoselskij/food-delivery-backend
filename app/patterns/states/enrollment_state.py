@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from app.exceptions import InvalidEnrollmentTransition
 from app.models.enrollment import Enrollment
@@ -42,7 +42,7 @@ class ActiveState(EnrollmentState):
 
     def complete(self, enrollment: Enrollment) -> None:
         enrollment.status = COMPLETED
-        enrollment.completed_at = datetime.now(timezone.utc)
+        enrollment.completed_at = datetime.now(UTC)
 
     def cancel(self, enrollment: Enrollment) -> None:
         enrollment.status = CANCELLED
@@ -59,14 +59,11 @@ class CancelledState(EnrollmentState):
         if target not in (PENDING_PAYMENT, ACTIVE):
             raise InvalidEnrollmentTransition()
         enrollment.status = target
-        enrollment.enrolled_at = datetime.now(timezone.utc)
+        enrollment.enrolled_at = datetime.now(UTC)
         enrollment.completed_at = None
 
 
-_STATES = {
-    state.name: state
-    for state in (PendingPaymentState(), ActiveState(), CompletedState(), CancelledState())
-}
+_STATES = {state.name: state for state in (PendingPaymentState(), ActiveState(), CompletedState(), CancelledState())}
 
 
 class EnrollmentStateMachine:

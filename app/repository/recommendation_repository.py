@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session, aliased, joinedload
@@ -39,7 +39,11 @@ def courses_in_categories(db: Session, weights: dict[int, int], exclude: set[int
         return []
     ratings = rating_repository.course_ratings(db)
     weight = case(weights, value=Course.category_id, else_=0)
-    query = _published(db).outerjoin(ratings, ratings.c.course_id == Course.id).filter(Course.category_id.in_(list(weights)))
+    query = (
+        _published(db)
+        .outerjoin(ratings, ratings.c.course_id == Course.id)
+        .filter(Course.category_id.in_(list(weights)))
+    )
     if exclude:
         query = query.filter(Course.id.not_in(exclude))
     return (
@@ -88,7 +92,7 @@ def load_published(db: Session, course_ids: list[int]) -> dict[int, Course]:
 
 
 def popular_courses(db: Session, exclude: set[int], limit: int, days: int = 90) -> list[Course]:
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
     recent = (
         db.query(Enrollment.course_id.label("course_id"), func.count(Enrollment.id).label("recent"))
         .filter(Enrollment.status.in_(ACCESS_STATUSES), Enrollment.enrolled_at >= since)

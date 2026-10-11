@@ -23,8 +23,13 @@ def _find_or_create(db: Session, sub: str, email: str, claims: dict, role: str, 
         if user is None:
             name, surname = _names(claims)
             user = User(
-                name=name, surname=surname, email=email, role=role,
-                password_hash=None, email_verified=True, google_sub=sub,
+                name=name,
+                surname=surname,
+                email=email,
+                role=role,
+                password_hash=None,
+                email_verified=True,
+                google_sub=sub,
             )
             user_repository.add(db, user)
         elif user.google_sub is not None:

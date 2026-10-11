@@ -11,6 +11,7 @@ Level = Literal["beginner", "intermediate", "advanced"]
 
 # ---------- request schemas ----------
 
+
 class CourseCreate(BaseModel):
     category_id: int
     title: str = Field(min_length=3, max_length=200)
@@ -55,6 +56,7 @@ class CourseFilters(BaseModel):
 
 
 # ---------- response schemas ----------
+
 
 class TeacherBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)

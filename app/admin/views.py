@@ -153,13 +153,30 @@ class CourseAdmin(SecureView, model=Course):
     can_create = False
     can_delete = False
 
-    column_list = [Course.id, Course.title, Course.teacher, Course.category, Course.status, Course.price, Course.created_at]
+    column_list = [
+        Course.id,
+        Course.title,
+        Course.teacher,
+        Course.category,
+        Course.status,
+        Course.price,
+        Course.created_at,
+    ]
     column_searchable_list = [Course.title]
     column_sortable_list = [Course.id, Course.title, Course.status, Course.price, Course.created_at]
     column_default_sort = ("created_at", True)
     column_details_list = [
-        Course.id, Course.title, Course.description, Course.teacher, Course.category, Course.level,
-        Course.price, Course.status, Course.cover_url, Course.created_at, Course.updated_at,
+        Course.id,
+        Course.title,
+        Course.description,
+        Course.teacher,
+        Course.category,
+        Course.level,
+        Course.price,
+        Course.status,
+        Course.cover_url,
+        Course.created_at,
+        Course.updated_at,
     ]
 
     form_columns = [Course.title, Course.description, Course.level, Course.category]
@@ -232,13 +249,26 @@ class EnrollmentAdmin(ReadOnlyView, model=Enrollment):
     icon = "fa-solid fa-graduation-cap"
     category = "Sales"
 
-    column_list = [Enrollment.id, Enrollment.student, Enrollment.course, Enrollment.status,
-                   Enrollment.enrolled_at, Enrollment.completed_at]
+    column_list = [
+        Enrollment.id,
+        Enrollment.student,
+        Enrollment.course,
+        Enrollment.status,
+        Enrollment.enrolled_at,
+        Enrollment.completed_at,
+    ]
     column_searchable_list = ["student.email", "course.title"]
     column_sortable_list = [Enrollment.id, Enrollment.status, Enrollment.enrolled_at, Enrollment.completed_at]
     column_default_sort = ("enrolled_at", True)
-    column_details_list = [Enrollment.id, Enrollment.student, Enrollment.course, Enrollment.status,
-                           Enrollment.enrolled_at, Enrollment.completed_at, Enrollment.payments]
+    column_details_list = [
+        Enrollment.id,
+        Enrollment.student,
+        Enrollment.course,
+        Enrollment.status,
+        Enrollment.enrolled_at,
+        Enrollment.completed_at,
+        Enrollment.payments,
+    ]
 
 
 class PaymentAdmin(ReadOnlyView, model=Payment):
@@ -247,8 +277,15 @@ class PaymentAdmin(ReadOnlyView, model=Payment):
     icon = "fa-solid fa-credit-card"
     category = "Sales"
 
-    column_list = [Payment.id, Payment.enrollment, Payment.amount, Payment.method, Payment.status,
-                   Payment.transaction_id, Payment.created_at]
+    column_list = [
+        Payment.id,
+        Payment.enrollment,
+        Payment.amount,
+        Payment.method,
+        Payment.status,
+        Payment.transaction_id,
+        Payment.created_at,
+    ]
     column_searchable_list = [Payment.transaction_id]
     column_sortable_list = [Payment.id, Payment.amount, Payment.status, Payment.created_at]
     column_default_sort = ("created_at", True)
@@ -272,8 +309,16 @@ class EmailOutboxAdmin(ReadOnlyView, model=EmailOutbox):
     icon = "fa-solid fa-envelope"
     category = "Sales"
 
-    column_list = [EmailOutbox.id, EmailOutbox.to_email, EmailOutbox.subject, EmailOutbox.status,
-                   EmailOutbox.attempts, EmailOutbox.next_attempt_at, EmailOutbox.last_error, EmailOutbox.sent_at]
+    column_list = [
+        EmailOutbox.id,
+        EmailOutbox.to_email,
+        EmailOutbox.subject,
+        EmailOutbox.status,
+        EmailOutbox.attempts,
+        EmailOutbox.next_attempt_at,
+        EmailOutbox.last_error,
+        EmailOutbox.sent_at,
+    ]
     column_searchable_list = [EmailOutbox.to_email, EmailOutbox.subject]
     column_sortable_list = [EmailOutbox.id, EmailOutbox.status, EmailOutbox.attempts, EmailOutbox.sent_at]
     column_default_sort = ("id", True)

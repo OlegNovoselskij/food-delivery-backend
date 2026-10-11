@@ -7,13 +7,7 @@ from app.models.quiz import Question, Quiz
 
 
 def get_for_update(db: Session, attempt_id: int) -> QuizAttempt | None:
-    return (
-        db.query(QuizAttempt)
-        .populate_existing()
-        .filter(QuizAttempt.id == attempt_id)
-        .with_for_update()
-        .first()
-    )
+    return db.query(QuizAttempt).populate_existing().filter(QuizAttempt.id == attempt_id).with_for_update().first()
 
 
 def get_full(db: Session, attempt_id: int) -> QuizAttempt | None:

@@ -62,9 +62,7 @@ def enroll(db: Session, student: User, course_id: int) -> Enrollment:
     return enrollment_repository.get_by_id(db, existing.id)
 
 
-def pay(
-    db: Session, enrollment_id: int, user: User, data: PayRequest, gateway: PaymentGateway
-) -> Enrollment:
+def pay(db: Session, enrollment_id: int, user: User, data: PayRequest, gateway: PaymentGateway) -> Enrollment:
     enrollment = _get_locked(db, enrollment_id, user, allow_admin=False)
     machine = EnrollmentStateMachine(enrollment)
     if not machine.accepts_payment():
@@ -118,9 +116,7 @@ def cancel(db: Session, enrollment_id: int, user: User, gateway: PaymentGateway)
 
 
 def list_my(db: Session, student: User, filters: EnrollmentFilters) -> list[Enrollment]:
-    return enrollment_repository.list_by_student(
-        db, student.id, status=filters.status, course_id=filters.course_id
-    )
+    return enrollment_repository.list_by_student(db, student.id, status=filters.status, course_id=filters.course_id)
 
 
 def get_one(db: Session, enrollment_id: int, user: User) -> Enrollment:

@@ -9,9 +9,9 @@ from app import config, rate_limit
 from app.cache import catalog_cache
 from app.database import get_db
 from app.models.user import User
-from app.repository import user_repository
 from app.patterns.adapters.payment_gateway import MockPaymentGateway, PaymentGateway
 from app.patterns.proxy.catalog_cache import CachingCatalogProxy, CatalogReader, DatabaseCatalogReader
+from app.repository import user_repository
 from app.security import decode_access_token
 from app.storage import S3Storage
 

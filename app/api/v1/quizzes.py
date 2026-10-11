@@ -56,7 +56,9 @@ def reorder_questions(quiz_id: int, data: OrderUpdate, user: User = Depends(staf
 
 
 @router.put("/questions/{question_id}", response_model=QuestionManageOut)
-def update_question(question_id: int, data: QuestionIn, user: User = Depends(staff_only), db: Session = Depends(get_db)):
+def update_question(
+    question_id: int, data: QuestionIn, user: User = Depends(staff_only), db: Session = Depends(get_db)
+):
     return quiz_service.update_question(db, question_id, user, data)
 
 
