@@ -1,4 +1,8 @@
 __pycache__/
 *.py[cod]
 .env
-.env
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+openapi.json
