@@ -9,7 +9,7 @@ class Quiz(Base):
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, ForeignKey("modules.id", ondelete="CASCADE"), unique=True, nullable=False)
     title = Column(String, nullable=False)
-    passing_score = Column(Integer, nullable=False, default=60)  # відсотків
+    passing_score = Column(Integer, nullable=False, default=60)  # percent
 
     module = relationship("Module", back_populates="quiz")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan", order_by="Question.position")

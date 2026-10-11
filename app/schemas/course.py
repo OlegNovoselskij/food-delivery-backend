@@ -9,7 +9,7 @@ from app.schemas.category import CategoryOut
 Level = Literal["beginner", "intermediate", "advanced"]
 
 
-# ---------- що приймаємо ----------
+# ---------- input ----------
 
 class CourseCreate(BaseModel):
     category_id: int
@@ -54,7 +54,7 @@ class CourseFilters(BaseModel):
         return self
 
 
-# ---------- що віддаємо ----------
+# ---------- output ----------
 
 class TeacherBrief(BaseModel):
     model_config = ConfigDict(from_attributes=True)

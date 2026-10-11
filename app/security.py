@@ -15,7 +15,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, password_hash: str) -> bool:
     raw = password.encode()
-    if len(raw) > 72:  # ліміт bcrypt, довший пароль не може бути вірним
+    if len(raw) > 72:  # bcrypt limit, a longer password can never be valid
         return False
     return bcrypt.checkpw(raw, password_hash.encode())
 

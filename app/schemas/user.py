@@ -14,7 +14,7 @@ class UserCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def password_fits_bcrypt(cls, v: str) -> str:
-        if len(v.encode()) > 72:  # кирилиця це 2 байти на символ
+        if len(v.encode()) > 72:  # Cyrillic is 2 bytes per character
             raise ValueError("Password is too long (max 72 bytes)")
         return v
 

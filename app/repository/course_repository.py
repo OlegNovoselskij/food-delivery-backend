@@ -17,7 +17,7 @@ def _with_relations(query):
 
 
 def _escape_like(value: str) -> str:
-    # щоб користувач не міг шукати "%" чи "_" як шаблонні символи
+    # so users cannot use "%" or "_" as wildcards
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 

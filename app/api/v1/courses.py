@@ -18,7 +18,7 @@ def list_courses(filters: Annotated[CourseFilters, Query()], db: Session = Depen
     return {"items": items, "total": total, "page": filters.page, "size": filters.size}
 
 
-# УВАГА: "/mine" має бути ДО "/{course_id}", інакше слово "mine" спробують розібрати як число
+# NOTE: "/mine" must be declared before "/{course_id}", otherwise "mine" is parsed as an int
 @router.get("/mine", response_model=list[CourseOut])
 def my_courses(teacher: User = Depends(require_role("teacher")), db: Session = Depends(get_db)):
     return course_service.list_my_courses(db, teacher)

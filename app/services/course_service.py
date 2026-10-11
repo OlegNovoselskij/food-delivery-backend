@@ -12,7 +12,7 @@ from app.models.user import User
 from app.repository import category_repository, course_repository
 from app.schemas.course import CourseCreate, CourseFilters, CourseUpdate
 
-# з якого статусу в які можна перейти
+# allowed status transitions
 ALLOWED_TRANSITIONS = {
     "draft": {"published"},
     "published": {"archived"},
@@ -47,7 +47,7 @@ def get_course_for_viewer(db: Session, course_id: int, viewer: User | None) -> C
     if course is None:
         raise CourseNotFound()
     if course.status != "published" and not (viewer and _can_manage(course, viewer)):
-        raise CourseNotFound()  # 404, а не 403: чужу чернетку не видно навіть як факт
+        raise CourseNotFound()  # 404 instead of 403: someone else's draft must not be revealed
     return course
 
 
