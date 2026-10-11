@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 
+from app import config
 from app.admin import setup_admin
+from app.api import dev_pages
 from app.api.error_handlers import register_error_handlers
 from app.api.v1 import (
     auth,
@@ -45,3 +47,6 @@ def health_check():
     return {"status": "ok"}
 
 setup_admin(app)
+
+if config.GOOGLE_TEST_PAGE_ENABLED:  # a development helper, never enabled in production
+    app.include_router(dev_pages.router)

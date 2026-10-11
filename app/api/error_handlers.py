@@ -52,6 +52,13 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.ReportAccessDenied: (403, "You cannot access this report"),
     exc.ReviewNotFound: (404, "Review not found"),
     exc.InvalidCode: (400, "The code is invalid or has expired"),
+    exc.InvalidGoogleToken: (401, "Google sign-in failed, please try again"),
+    exc.GoogleAccountNotSupported: (
+        403,
+        "This Google account's email cannot be verified automatically. Register with your email and a code instead",
+    ),
+    exc.GoogleAccountConflict: (409, "This email is already linked to another Google account"),
+    exc.GoogleLoginUnavailable: (503, "Google sign-in is temporarily unavailable"),
 }
 
 

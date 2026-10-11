@@ -86,3 +86,12 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class GoogleLoginRequest(BaseModel):
+    credential: str = Field(min_length=20, max_length=8192)  # the ID token (JWT) issued by Google
+    role: Literal["student", "teacher"] = "student"  # used only when a NEW account is created
+
+
+class NonceOut(BaseModel):
+    nonce: str

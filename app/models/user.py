@@ -16,6 +16,7 @@ class User(Base):
     role = Column(String, nullable=False, default="student")  # student, teacher, admin
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     email_verified = Column(Boolean, nullable=False, default=False, server_default=expression.false())
+    google_sub = Column(String, unique=True)  # Google's stable account id; null for password-only users
     password_changed_at = Column(DateTime(timezone=True))  # tokens issued before this moment stop working
 
     def __str__(self) -> str:

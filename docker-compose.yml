@@ -16,6 +16,8 @@ x-app-environment: &app-environment
   EMAIL_FROM_ADDRESS: no-reply@courses.local
   SMTP_HOST: mailpit
   SMTP_PORT: "1025"
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_TEST_PAGE_ENABLED: "true"
 
 services:
   backend:

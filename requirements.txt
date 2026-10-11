@@ -17,3 +17,5 @@ itsdangerous
 greenlet
 httpx
 jinja2
+google-auth
+requests

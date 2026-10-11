@@ -197,3 +197,19 @@ class ReviewNotFound(Exception):
 
 class InvalidCode(Exception):
     pass
+
+
+class InvalidGoogleToken(Exception):
+    pass
+
+
+class GoogleAccountNotSupported(Exception):
+    pass
+
+
+class GoogleAccountConflict(Exception):
+    pass
+
+
+class GoogleLoginUnavailable(Exception):
+    pass

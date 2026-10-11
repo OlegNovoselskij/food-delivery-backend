@@ -1,19 +1,22 @@
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+from app import google_identity
 from app.database import get_db
 from app.dependency import client_ip, limit_by_ip
 from app.schemas.user import (
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     LoginRequest,
     MessageOut,
+    NonceOut,
     RegisterRequest,
     ResendCodeRequest,
     ResetPasswordRequest,
     Token,
     VerifyRegistrationRequest,
 )
-from app.services import auth_service
+from app.services import auth_service, google_auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -77,3 +80,21 @@ def forgot_password(data: ForgotPasswordRequest, db: Session = Depends(get_db)):
 def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     auth_service.reset_password(db, data.email, data.code, data.new_password)
     return {"message": "Password changed, please log in again"}
+
+
+@router.post(
+    "/google/nonce",
+    response_model=NonceOut,
+    dependencies=[Depends(limit_by_ip("google-nonce", limit=30, window_seconds=3600))],
+)
+def google_nonce():
+    return {"nonce": google_identity.issue_nonce()}
+
+
+@router.post(
+    "/google",
+    response_model=Token,
+    dependencies=[Depends(limit_by_ip("google-login", limit=30, window_seconds=3600))],
+)
+def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
+    return Token(access_token=google_auth_service.login_with_google(db, data.credential, data.role))
