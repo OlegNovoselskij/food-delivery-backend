@@ -31,6 +31,9 @@ class Enrollment(Base):
     def payment(self) -> "Payment | None":
         return self.payments[-1] if self.payments else None
 
+    def __str__(self) -> str:
+        return f"Enrollment #{self.id}"
+
 
 class Payment(Base):
     __tablename__ = "payments"

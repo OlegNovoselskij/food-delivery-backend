@@ -15,3 +15,6 @@ class User(Base):
     bio = Column(Text)
     role = Column(String, nullable=False, default="student")  # student, teacher, admin
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.surname} <{self.email}>"

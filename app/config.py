@@ -48,3 +48,7 @@ CATALOG_CACHE_TTL_SECONDS = int(os.getenv("CATALOG_CACHE_TTL_SECONDS", "60"))
 RATE_LIMITS_ENABLED = os.getenv("RATE_LIMITS_ENABLED", "true").lower() == "true"
 LOGIN_MAX_FAILURES = 5
 LOGIN_LOCK_SECONDS = 15 * 60
+
+ADMIN_SESSION_SECRET = os.getenv("ADMIN_SESSION_SECRET", "dev-admin-session-secret-change-me-in-production")
+ADMIN_COOKIE_SECURE = os.getenv("ADMIN_COOKIE_SECURE", "false").lower() == "true"
+ADMIN_SESSION_HOURS = int(os.getenv("ADMIN_SESSION_HOURS", "8"))

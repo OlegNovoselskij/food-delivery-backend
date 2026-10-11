@@ -12,6 +12,9 @@ class Category(Base):
 
     courses = relationship("Course", back_populates="category")
 
+    def __str__(self) -> str:
+        return self.name
+
 
 class Course(Base):
     __tablename__ = "courses"
@@ -33,6 +36,9 @@ class Course(Base):
     modules = relationship("Module", back_populates="course", cascade="all, delete-orphan", order_by="Module.position")
     reviews = relationship("Review", back_populates="course", cascade="all, delete-orphan")
     enrollments = relationship("Enrollment", back_populates="course")
+
+    def __str__(self) -> str:
+        return self.title
 
 
 class Module(Base):

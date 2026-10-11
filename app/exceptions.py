@@ -189,3 +189,7 @@ class RateLimitExceeded(Exception):
 
 class ReportAccessDenied(Exception):
     pass
+
+
+class ReviewNotFound(Exception):
+    pass

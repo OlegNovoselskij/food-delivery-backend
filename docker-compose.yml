@@ -15,6 +15,8 @@ services:
       VALKEY_URL: redis://valkey:6379/0
       ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3000,http://localhost:8000"
       PUBLIC_API_URL: http://localhost:8000
+      ADMIN_SESSION_SECRET: dev-admin-session-secret-change-me-in-production
+      ADMIN_COOKIE_SECURE: "false"
     volumes:
       - .:/code
     depends_on:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.admin import setup_admin
 from app.api.error_handlers import register_error_handlers
 from app.api.v1 import (
     auth,
@@ -42,3 +43,5 @@ app.include_router(recommendations.router, prefix="/api/v1")
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+setup_admin(app)

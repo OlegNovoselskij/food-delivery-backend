@@ -12,3 +12,6 @@ python-multipart
 boto3
 redis>=5.0.1
 reportlab
+sqladmin
+itsdangerous
+greenlet
