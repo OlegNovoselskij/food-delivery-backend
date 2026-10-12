@@ -29,6 +29,7 @@ class Course(Base):
     price = Column(Numeric(10, 2), nullable=False, default=0)
     status = Column(String, nullable=False, default="draft", index=True)  # draft, published, archived
     cover_url = Column(String)
+    cover_key = Column(String)
     rating_avg = Column(Numeric(3, 2))  # kept in sync by review_service
     reviews_count = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -13,10 +13,16 @@ DOWNLOAD_URL_TTL_SECONDS = 60 * 60
 
 VIDEO_MAX_BYTES = 2 * 1024**3
 MATERIAL_MAX_BYTES = 100 * 1024**2
+COVER_MAX_BYTES = 5 * 1024**2
 
 VIDEO_TYPES = {
     "video/mp4": ".mp4",
     "video/webm": ".webm",
+}
+COVER_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
 }
 MATERIAL_TYPES = {
     "application/pdf": ".pdf",

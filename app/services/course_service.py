@@ -85,7 +85,7 @@ def delete_course(db: Session, course_id: int, user: User, storage: S3Storage) -
     course = get_course_for_edit(db, course_id, user)
     if course.status != "draft":
         raise CourseNotDeletable()
-    keys = media_repository.storage_keys(db, course_id=course.id)
+    keys = [*media_repository.storage_keys(db, course_id=course.id), course.cover_key]
     course_repository.delete(db, course)
     db.commit()
     storage.delete_many(keys)

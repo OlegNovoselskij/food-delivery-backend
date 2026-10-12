@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependency import get_catalog_reader, get_optional_user, get_storage, limit_by_ip, require_role
+from app.dependency import get_catalog_reader, get_optional_user, get_storage, limit_by_ip, limit_by_user, require_role
 from app.models.user import User
 from app.patterns.proxy.catalog_cache import CatalogReader
 from app.schemas.course import CourseCreate, CourseFilters, CourseOut, CoursePage, CourseUpdate
-from app.services import course_service
+from app.schemas.media import ConfirmCoverRequest, CoverUploadRequest, UploadInstructions
+from app.services import course_service, media_service
 from app.storage import S3Storage
 
 router = APIRouter(prefix="/courses", tags=["courses"])
@@ -91,3 +92,39 @@ def delete_course(
 ):
     course_service.delete_course(db, course_id, user, storage)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{course_id}/cover/upload-url",
+    response_model=UploadInstructions,
+    dependencies=[Depends(limit_by_user("upload-url", limit=30, window_seconds=3600))],
+)
+def cover_upload_url(
+    course_id: int,
+    data: CoverUploadRequest,
+    user: User = Depends(require_role("teacher", "admin")),
+    db: Session = Depends(get_db),
+    storage: S3Storage = Depends(get_storage),
+):
+    return media_service.request_cover_upload(db, course_id, user, data, storage)
+
+
+@router.post("/{course_id}/cover/confirm", response_model=CourseOut)
+def confirm_cover(
+    course_id: int,
+    data: ConfirmCoverRequest,
+    user: User = Depends(require_role("teacher", "admin")),
+    db: Session = Depends(get_db),
+    storage: S3Storage = Depends(get_storage),
+):
+    return media_service.confirm_cover(db, course_id, user, data.upload_ticket, storage)
+
+
+@router.delete("/{course_id}/cover", response_model=CourseOut)
+def delete_cover(
+    course_id: int,
+    user: User = Depends(require_role("teacher", "admin")),
+    db: Session = Depends(get_db),
+    storage: S3Storage = Depends(get_storage),
+):
+    return media_service.delete_cover(db, course_id, user, storage)

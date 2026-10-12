@@ -46,13 +46,23 @@ def decode_access_token(token: str) -> dict:
     return payload
 
 
-def create_upload_ticket(*, user_id: int, kind: str, lesson_id: int, key: str, content_type: str, filename: str) -> str:
+def create_upload_ticket(
+    *,
+    user_id: int,
+    kind: str,
+    key: str,
+    content_type: str,
+    filename: str,
+    lesson_id: int | None = None,
+    course_id: int | None = None,
+) -> str:
     expire = datetime.now(UTC) + timedelta(seconds=config.UPLOAD_TICKET_TTL_SECONDS)
     payload = {
         "typ": "upload",
         "uid": user_id,
         "kind": kind,
         "lesson_id": lesson_id,
+        "course_id": course_id,
         "key": key,
         "ct": content_type,
         "fn": filename,

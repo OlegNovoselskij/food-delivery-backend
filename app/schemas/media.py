@@ -34,7 +34,24 @@ class MaterialUploadRequest(BaseModel):
         return value
 
 
+class CoverUploadRequest(BaseModel):
+    filename: Filename
+    content_type: str
+    size: int = Field(gt=0, le=config.COVER_MAX_BYTES)
+
+    @field_validator("content_type")
+    @classmethod
+    def allowed_type(cls, value: str) -> str:
+        if value not in config.COVER_TYPES:
+            raise ValueError(f"Unsupported image type. Allowed: {', '.join(config.COVER_TYPES)}")
+        return value
+
+
 class ConfirmVideoRequest(BaseModel):
+    upload_ticket: str = Field(min_length=1)
+
+
+class ConfirmCoverRequest(BaseModel):
     upload_ticket: str = Field(min_length=1)
 
 

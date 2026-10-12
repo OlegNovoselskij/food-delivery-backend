@@ -30,6 +30,12 @@ class FakeStorage:
     def ensure_bucket(self) -> None:
         pass
 
+    def ensure_public_read(self, key_pattern: str) -> None:
+        pass
+
+    def public_url(self, key: str) -> str:
+        return f"https://storage.test/public/{key}"
+
     def upload_url(self, key: str, content_type: str, expires_in: int) -> str:
         return f"https://storage.test/upload/{key}"
 

@@ -1,3 +1,4 @@
+import json
 import logging
 from collections.abc import Iterable
 from urllib.parse import quote
@@ -29,6 +30,7 @@ class S3Storage:
         region: str,
     ) -> None:
         self._bucket = bucket
+        self._public_endpoint_url = public_endpoint_url
 
         client_config = Config(
             signature_version="s3v4",
@@ -68,6 +70,27 @@ class S3Storage:
         except (BotoCoreError, ClientError) as error:
             logger.exception("Cannot prepare bucket %s", self._bucket)
             raise StorageUnavailable() from error
+
+    def ensure_public_read(self, key_pattern: str) -> None:
+        policy = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {"AWS": ["*"]},
+                    "Action": ["s3:GetObject"],
+                    "Resource": [f"arn:aws:s3:::{self._bucket}/{key_pattern}"],
+                }
+            ],
+        }
+        try:
+            self._client.put_bucket_policy(Bucket=self._bucket, Policy=json.dumps(policy))
+        except (BotoCoreError, ClientError) as error:
+            logger.exception("Cannot publish %s in bucket %s", key_pattern, self._bucket)
+            raise StorageUnavailable() from error
+
+    def public_url(self, key: str) -> str:
+        return f"{self._public_endpoint_url.rstrip('/')}/{self._bucket}/{quote(key, safe='/')}"
 
     def upload_url(self, key: str, content_type: str, expires_in: int) -> str:
         return self._signer.generate_presigned_url(

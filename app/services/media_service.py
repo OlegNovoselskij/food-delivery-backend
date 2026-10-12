@@ -12,20 +12,25 @@ from app.exceptions import (
     NotCourseOwner,
     UploadNotFound,
 )
-from app.models.catalog import Lesson, LessonMaterial
+from app.models.catalog import Course, Lesson, LessonMaterial
 from app.models.user import User
-from app.repository import curriculum_repository, media_repository
+from app.patterns.observer.event_bus import event_bus
+from app.patterns.observer.events import CatalogChanged
+from app.repository import course_repository, curriculum_repository, media_repository
 from app.security import create_upload_ticket, decode_upload_ticket
 from app.services import curriculum_service
-from app.services.access import can_manage_course, get_lesson_for_edit
+from app.services.access import can_manage_course, get_course_for_edit, get_lesson_for_edit
 from app.storage import S3Storage
 
 VIDEO = "video"
 MATERIAL = "material"
+COVER = "cover"
+COVER_PUBLIC_KEYS = "courses/*/cover/*"
 
 _RULES = {
     VIDEO: (config.VIDEO_TYPES, config.VIDEO_MAX_BYTES),
     MATERIAL: (config.MATERIAL_TYPES, config.MATERIAL_MAX_BYTES),
+    COVER: (config.COVER_TYPES, config.COVER_MAX_BYTES),
 }
 
 
@@ -34,12 +39,14 @@ def _new_key(course_id: int, lesson_id: int, kind: str, content_type: str) -> st
     return f"courses/{course_id}/lessons/{lesson_id}/{kind}/{uuid.uuid4().hex}{extension}"
 
 
-def _read_ticket(ticket: str, user: User, kind: str, lesson_id: int) -> dict:
+def _read_ticket(ticket: str, user: User, kind: str, **scope: int) -> dict:
     try:
         claims = decode_upload_ticket(ticket)
     except jwt.PyJWTError:
         raise InvalidUploadTicket()
-    if claims.get("uid") != user.id or claims.get("kind") != kind or claims.get("lesson_id") != lesson_id:
+    if claims.get("uid") != user.id or claims.get("kind") != kind:
+        raise InvalidUploadTicket()
+    if any(claims.get(name) != value for name, value in scope.items()):
         raise InvalidUploadTicket()
     return claims
 
@@ -80,7 +87,7 @@ def request_upload(db: Session, lesson_id: int, user: User, kind: str, data, sto
 
 def confirm_video(db: Session, lesson_id: int, user: User, ticket: str, storage: S3Storage) -> Lesson:
     lesson = get_lesson_for_edit(db, lesson_id, user)
-    claims = _read_ticket(ticket, user, VIDEO, lesson.id)
+    claims = _read_ticket(ticket, user, VIDEO, lesson_id=lesson.id)
 
     if lesson.video_key == claims["key"]:
         return lesson
@@ -110,7 +117,7 @@ def confirm_material(
     db: Session, lesson_id: int, user: User, ticket: str, title: str, storage: S3Storage
 ) -> LessonMaterial:
     lesson = get_lesson_for_edit(db, lesson_id, user)
-    claims = _read_ticket(ticket, user, MATERIAL, lesson.id)
+    claims = _read_ticket(ticket, user, MATERIAL, lesson_id=lesson.id)
 
     existing = media_repository.get_material_by_key(db, claims["key"])
     if existing is not None:
@@ -159,3 +166,57 @@ def get_material_url(db: Session, material_id: int, viewer: User | None, storage
     ttl = config.DOWNLOAD_URL_TTL_SECONDS
     url = storage.download_url(material.file_key, ttl, filename=material.original_filename)
     return {"url": url, "expires_in": ttl}
+
+
+def request_cover_upload(db: Session, course_id: int, user: User, data, storage: S3Storage) -> dict:
+    course = get_course_for_edit(db, course_id, user)
+    extension = config.COVER_TYPES[data.content_type]
+    key = f"courses/{course.id}/cover/{uuid.uuid4().hex}{extension}"
+
+    storage.ensure_bucket()
+    ticket = create_upload_ticket(
+        user_id=user.id,
+        kind=COVER,
+        course_id=course.id,
+        key=key,
+        content_type=data.content_type,
+        filename=data.filename,
+    )
+    return {
+        "upload_url": storage.upload_url(key, data.content_type, config.UPLOAD_URL_TTL_SECONDS),
+        "method": "PUT",
+        "headers": {"Content-Type": data.content_type},
+        "upload_ticket": ticket,
+        "expires_in": config.UPLOAD_URL_TTL_SECONDS,
+    }
+
+
+def confirm_cover(db: Session, course_id: int, user: User, ticket: str, storage: S3Storage) -> Course:
+    course = get_course_for_edit(db, course_id, user)
+    claims = _read_ticket(ticket, user, COVER, course_id=course.id)
+
+    if course.cover_key == claims["key"]:
+        return course
+
+    _check_uploaded_object(storage, claims, COVER)
+    storage.ensure_public_read(COVER_PUBLIC_KEYS)
+    old_key = course.cover_key
+    course.cover_key = claims["key"]
+    course.cover_url = storage.public_url(claims["key"])
+    event_bus.publish(db, CatalogChanged(reason="course_updated"))
+    db.commit()
+
+    storage.delete_many([old_key])
+    return course_repository.get_by_id(db, course.id)
+
+
+def delete_cover(db: Session, course_id: int, user: User, storage: S3Storage) -> Course:
+    course = get_course_for_edit(db, course_id, user)
+    old_key = course.cover_key
+    course.cover_key = None
+    course.cover_url = None
+    event_bus.publish(db, CatalogChanged(reason="course_updated"))
+    db.commit()
+
+    storage.delete_many([old_key])
+    return course_repository.get_by_id(db, course.id)
