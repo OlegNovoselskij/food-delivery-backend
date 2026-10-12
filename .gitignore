@@ -6,3 +6,11 @@ __pycache__/
 .coverage
 htmlcov/
 openapi.json
+**/node_modules/
+.venv/
+venv/
+.vscode/
+.idea/
+*.log
+Thumbs.db
+.DS_Store
