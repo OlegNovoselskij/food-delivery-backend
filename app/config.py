@@ -6,6 +6,9 @@ S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "rustfsadmin")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "rustfsadmin")
 S3_BUCKET = os.getenv("S3_BUCKET", "courses")
 S3_REGION = os.getenv("S3_REGION", "us-east-1")
+S3_PUBLIC_BUCKET = os.getenv("S3_PUBLIC_BUCKET", S3_BUCKET)  # course covers; same bucket locally, a separate one in prod
+S3_PUBLIC_BASE_URL = os.getenv("S3_PUBLIC_BASE_URL", "").rstrip("/")  # e.g. https://pub-xxxx.r2.dev (empty = path-style URL)
+S3_AUTO_SETUP = os.getenv("S3_AUTO_SETUP", "true").lower() == "true"  # create buckets / bucket policy (off in prod)
 
 UPLOAD_URL_TTL_SECONDS = 15 * 60
 UPLOAD_TICKET_TTL_SECONDS = 6 * 60 * 60

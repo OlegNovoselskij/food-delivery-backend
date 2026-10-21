@@ -1,5 +1,11 @@
-__pycache__/
+.git
+.env
+.env.*
+!.env.example
+.venv
+venv
+__pycache__
 *.pyc
-venv/
-.venv/
-.git/
+.pytest_cache
+.ruff_cache
+tests
