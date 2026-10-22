@@ -8,6 +8,7 @@ os.environ["APP_ENV"] = "test"
 os.environ["LOG_LEVEL"] = "WARNING"
 
 from collections.abc import Iterator
+from datetime import UTC, datetime
 
 import fakeredis
 import pytest
@@ -26,8 +27,8 @@ class FakeStorage:
 
     def __init__(self) -> None:
         self.objects: dict[str, dict] = {}
-
         self.signed_sizes: dict[str, int | None] = {}
+
     def ensure_bucket(self) -> None:
         pass
 
@@ -48,6 +49,13 @@ class FakeStorage:
         item = self.objects.get(key)
         return {"size": item["size"], "content_type": item["content_type"]} if item else None
 
+    def list_objects(self, prefix: str) -> list[dict]:
+        return [
+            {"key": key, "size": item["size"], "last_modified": item["last_modified"]}
+            for key, item in self.objects.items()
+            if key.startswith(prefix)
+        ]
+
     def delete_many(self, keys) -> None:
         for key in keys:
             if key:
@@ -56,8 +64,12 @@ class FakeStorage:
     def is_reachable(self) -> bool:
         return True
 
-    def put(self, key: str, size: int, content_type: str) -> None:
-        self.objects[key] = {"size": size, "content_type": content_type}
+    def put(self, key: str, size: int, content_type: str, last_modified: datetime | None = None) -> None:
+        self.objects[key] = {
+            "size": size,
+            "content_type": content_type,
+            "last_modified": last_modified or datetime.now(UTC),
+        }
 
 
 @pytest.fixture(scope="session", autouse=True)

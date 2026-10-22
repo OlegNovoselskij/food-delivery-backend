@@ -142,6 +142,18 @@ class S3Storage:
             raise StorageUnavailable() from error
         return {"size": response["ContentLength"], "content_type": response.get("ContentType")}
 
+    def list_objects(self, prefix: str) -> list[dict]:
+        found = []
+        try:
+            for bucket in dict.fromkeys((self._bucket, self._public_bucket)):  # one bucket locally, two in prod
+                for page in self._client.get_paginator("list_objects_v2").paginate(Bucket=bucket, Prefix=prefix):
+                    for item in page.get("Contents", []):
+                        found.append({"key": item["Key"], "size": item["Size"], "last_modified": item["LastModified"]})
+        except (BotoCoreError, ClientError) as error:
+            logger.exception("Cannot list objects under %s", prefix)
+            raise StorageUnavailable() from error
+        return found
+
     def delete_many(self, keys: Iterable[str | None]) -> None:
         for key in keys:
             if not key:
