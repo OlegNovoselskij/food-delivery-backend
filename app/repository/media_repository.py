@@ -1,6 +1,8 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
-from app.models.catalog import Lesson, LessonMaterial, Module
+from app import config
+from app.models.catalog import Course, Lesson, LessonMaterial, Module
 
 
 def get_material(db: Session, material_id: int) -> LessonMaterial | None:
@@ -55,3 +57,18 @@ def storage_keys(
         .all()
     )
     return [key for (key,) in videos] + [key for (key,) in files]
+
+
+def used_storage_bytes(db: Session) -> int:
+    # covers are charged at their maximum size: their real size is not stored
+    videos = db.query(func.coalesce(func.sum(Lesson.video_size), 0)).scalar()
+    materials = db.query(func.coalesce(func.sum(LessonMaterial.size_bytes), 0)).scalar()
+    covers = db.query(func.count(Course.id)).filter(Course.cover_key.isnot(None)).scalar()
+    return int(videos) + int(materials) + covers * config.COVER_MAX_BYTES
+
+
+def referenced_storage_keys(db: Session) -> set[str]:
+    videos = db.query(Lesson.video_key).filter(Lesson.video_key.isnot(None)).all()
+    files = db.query(LessonMaterial.file_key).all()
+    covers = db.query(Course.cover_key).filter(Course.cover_key.isnot(None)).all()
+    return {key for (key,) in videos + files + covers}

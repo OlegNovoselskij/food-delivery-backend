@@ -117,12 +117,11 @@ class S3Storage:
             return f"{self._public_base_url}/{quoted}"
         return f"{self._public_endpoint_url.rstrip('/')}/{self._public_bucket}/{quoted}"
 
-    def upload_url(self, key: str, content_type: str, expires_in: int) -> str:
-        return self._signer.generate_presigned_url(
-            "put_object",
-            Params={"Bucket": self._bucket_for(key), "Key": key, "ContentType": content_type},
-            ExpiresIn=expires_in,
-        )
+    def upload_url(self, key: str, content_type: str, expires_in: int, size: int | None = None) -> str:
+        params = {"Bucket": self._bucket_for(key), "Key": key, "ContentType": content_type}
+        if size is not None and config.S3_SIGN_CONTENT_LENGTH:
+            params["ContentLength"] = size  # signed: the storage rejects a file of another size
+        return self._signer.generate_presigned_url("put_object", Params=params, ExpiresIn=expires_in)
 
     def download_url(self, key: str, expires_in: int, filename: str | None = None) -> str:
         params = {"Bucket": self._bucket_for(key), "Key": key}

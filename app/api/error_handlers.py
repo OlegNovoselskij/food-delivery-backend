@@ -25,6 +25,7 @@ ERROR_MAP: dict[type[Exception], tuple[int, str]] = {
     exc.CourseIncomplete: (409, "Add at least one lesson before publishing"),
     exc.InvalidOrdering: (422, "ids must match the current items exactly"),
     exc.StorageUnavailable: (503, "File storage is unavailable, try again later"),
+    exc.StorageQuotaExceeded: (507, "Storage limit reached. Please contact the administrator"),
     exc.InvalidUploadTicket: (400, "Upload ticket is invalid or expired"),
     exc.UploadNotFound: (409, "File is not in storage yet, upload it first"),
     exc.InvalidUploadedFile: (422, "Uploaded file has a wrong type or is too large, it was removed"),

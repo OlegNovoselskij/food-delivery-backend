@@ -9,10 +9,14 @@ S3_REGION = os.getenv("S3_REGION", "us-east-1")
 S3_PUBLIC_BUCKET = os.getenv("S3_PUBLIC_BUCKET", S3_BUCKET)  # course covers; same bucket locally, a separate one in prod
 S3_PUBLIC_BASE_URL = os.getenv("S3_PUBLIC_BASE_URL", "").rstrip("/")  # e.g. https://pub-xxxx.r2.dev (empty = path-style URL)
 S3_AUTO_SETUP = os.getenv("S3_AUTO_SETUP", "true").lower() == "true"  # create buckets / bucket policy (off in prod)
+S3_SIGN_CONTENT_LENGTH = os.getenv("S3_SIGN_CONTENT_LENGTH", "true").lower() == "true"  # storage rejects a PUT of another size
 
 UPLOAD_URL_TTL_SECONDS = 15 * 60
 UPLOAD_TICKET_TTL_SECONDS = 6 * 60 * 60
 DOWNLOAD_URL_TTL_SECONDS = 60 * 60
+
+STORAGE_QUOTA_BYTES = int(os.getenv("STORAGE_QUOTA_BYTES", str(8 * 1024**3)))  # R2 free tier is 10 GB: keep a margin
+STORAGE_ORPHAN_GRACE_SECONDS = int(os.getenv("STORAGE_ORPHAN_GRACE_SECONDS", str(7 * 3600)))  # must exceed UPLOAD_TICKET_TTL_SECONDS
 
 VIDEO_MAX_BYTES = 2 * 1024**3
 MATERIAL_MAX_BYTES = 100 * 1024**2

@@ -27,6 +27,7 @@ class FakeStorage:
     def __init__(self) -> None:
         self.objects: dict[str, dict] = {}
 
+        self.signed_sizes: dict[str, int | None] = {}
     def ensure_bucket(self) -> None:
         pass
 
@@ -36,7 +37,8 @@ class FakeStorage:
     def public_url(self, key: str) -> str:
         return f"https://storage.test/public/{key}"
 
-    def upload_url(self, key: str, content_type: str, expires_in: int) -> str:
+    def upload_url(self, key: str, content_type: str, expires_in: int, size: int | None = None) -> str:
+        self.signed_sizes[key] = size
         return f"https://storage.test/upload/{key}"
 
     def download_url(self, key: str, expires_in: int, filename: str | None = None) -> str:

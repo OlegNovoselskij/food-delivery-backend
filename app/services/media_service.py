@@ -10,6 +10,7 @@ from app.exceptions import (
     LessonHasNoVideo,
     MaterialNotFound,
     NotCourseOwner,
+    StorageQuotaExceeded,
     UploadNotFound,
 )
 from app.models.catalog import Course, Lesson, LessonMaterial
@@ -18,7 +19,7 @@ from app.patterns.observer.event_bus import event_bus
 from app.patterns.observer.events import CatalogChanged
 from app.repository import course_repository, curriculum_repository, media_repository
 from app.security import create_upload_ticket, decode_upload_ticket
-from app.services import curriculum_service
+from app.services import curriculum_service, storage_quota
 from app.services.access import can_manage_course, get_course_for_edit, get_lesson_for_edit
 from app.storage import S3Storage
 
@@ -51,6 +52,10 @@ def _read_ticket(ticket: str, user: User, kind: str, **scope: int) -> dict:
     return claims
 
 
+def _charge(kind: str, size: int) -> int:
+    return config.COVER_MAX_BYTES if kind == COVER else size  # the cover size is not stored: it counts at the maximum
+
+
 def _check_uploaded_object(storage: S3Storage, claims: dict, kind: str) -> dict:
     head = storage.head(claims["key"])
     if head is None:
@@ -59,8 +64,18 @@ def _check_uploaded_object(storage: S3Storage, claims: dict, kind: str) -> dict:
     stored_type = (head["content_type"] or "").split(";")[0].strip().lower()
     if head["size"] <= 0 or head["size"] > _RULES[kind][1] or stored_type != claims["ct"]:
         storage.delete_many([claims["key"]])
+        storage_quota.release(claims["key"])
         raise InvalidUploadedFile()
     return head
+
+
+def _ensure_room(db: Session, storage: S3Storage, claims: dict, size: int, *, replacing: int = 0) -> None:
+    try:
+        storage_quota.ensure_room(db, size, replacing=replacing)
+    except StorageQuotaExceeded:
+        storage.delete_many([claims["key"]])
+        storage_quota.release(claims["key"])
+        raise
 
 
 def request_upload(db: Session, lesson_id: int, user: User, kind: str, data, storage: S3Storage) -> dict:
@@ -68,6 +83,8 @@ def request_upload(db: Session, lesson_id: int, user: User, kind: str, data, sto
     key = _new_key(lesson.module.course_id, lesson.id, kind, data.content_type)
 
     storage.ensure_bucket()
+    replacing = (lesson.video_size or 0) if kind == VIDEO else 0
+    storage_quota.reserve(db, key, _charge(kind, data.size), replacing=replacing)
     ticket = create_upload_ticket(
         user_id=user.id,
         kind=kind,
@@ -77,7 +94,7 @@ def request_upload(db: Session, lesson_id: int, user: User, kind: str, data, sto
         filename=data.filename,
     )
     return {
-        "upload_url": storage.upload_url(key, data.content_type, config.UPLOAD_URL_TTL_SECONDS),
+        "upload_url": storage.upload_url(key, data.content_type, config.UPLOAD_URL_TTL_SECONDS, size=data.size),
         "method": "PUT",
         "headers": {"Content-Type": data.content_type},
         "upload_ticket": ticket,
@@ -93,11 +110,13 @@ def confirm_video(db: Session, lesson_id: int, user: User, ticket: str, storage:
         return lesson
 
     head = _check_uploaded_object(storage, claims, VIDEO)
+    _ensure_room(db, storage, claims, head["size"], replacing=lesson.video_size or 0)
     old_key = lesson.video_key
     lesson.video_key = claims["key"]
     lesson.video_size = head["size"]
     db.commit()
 
+    storage_quota.release(claims["key"])
     storage.delete_many([old_key])
     return curriculum_repository.get_lesson(db, lesson.id)
 
@@ -124,6 +143,7 @@ def confirm_material(
         return existing
 
     head = _check_uploaded_object(storage, claims, MATERIAL)
+    _ensure_room(db, storage, claims, head["size"])
     material = LessonMaterial(
         lesson_id=lesson.id,
         title=title,
@@ -134,6 +154,7 @@ def confirm_material(
     )
     media_repository.add_material(db, material)
     db.commit()
+    storage_quota.release(claims["key"])
     db.refresh(material)
     return material
 
@@ -174,6 +195,8 @@ def request_cover_upload(db: Session, course_id: int, user: User, data, storage:
     key = f"courses/{course.id}/cover/{uuid.uuid4().hex}{extension}"
 
     storage.ensure_bucket()
+    replacing = config.COVER_MAX_BYTES if course.cover_key else 0
+    storage_quota.reserve(db, key, _charge(COVER, data.size), replacing=replacing)
     ticket = create_upload_ticket(
         user_id=user.id,
         kind=COVER,
@@ -183,7 +206,7 @@ def request_cover_upload(db: Session, course_id: int, user: User, data, storage:
         filename=data.filename,
     )
     return {
-        "upload_url": storage.upload_url(key, data.content_type, config.UPLOAD_URL_TTL_SECONDS),
+        "upload_url": storage.upload_url(key, data.content_type, config.UPLOAD_URL_TTL_SECONDS, size=data.size),
         "method": "PUT",
         "headers": {"Content-Type": data.content_type},
         "upload_ticket": ticket,
@@ -199,6 +222,8 @@ def confirm_cover(db: Session, course_id: int, user: User, ticket: str, storage:
         return course
 
     _check_uploaded_object(storage, claims, COVER)
+    replacing = config.COVER_MAX_BYTES if course.cover_key else 0
+    _ensure_room(db, storage, claims, config.COVER_MAX_BYTES, replacing=replacing)
     storage.ensure_public_read(COVER_PUBLIC_KEYS)
     old_key = course.cover_key
     course.cover_key = claims["key"]
@@ -206,6 +231,7 @@ def confirm_cover(db: Session, course_id: int, user: User, ticket: str, storage:
     event_bus.publish(db, CatalogChanged(reason="course_updated"))
     db.commit()
 
+    storage_quota.release(claims["key"])
     storage.delete_many([old_key])
     return course_repository.get_by_id(db, course.id)
 

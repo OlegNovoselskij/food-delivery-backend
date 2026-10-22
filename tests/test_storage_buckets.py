@@ -1,5 +1,6 @@
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
+from app import config
 from app.storage import S3Storage, is_public_key
 
 COVER_KEY = "courses/7/cover/0123456789abcdef0123456789abcdef.png"
@@ -52,3 +53,17 @@ def test_setup_is_skipped_when_auto_setup_is_off():
     storage = _storage()
     storage.ensure_bucket()
     storage.ensure_public_read("courses/*/cover/*")
+
+
+def _signed_headers(url: str) -> str:
+    return parse_qs(urlparse(url).query)["X-Amz-SignedHeaders"][0]
+
+
+def test_the_declared_size_is_signed_into_the_upload_url():
+    assert "content-length" in _signed_headers(_storage().upload_url(COVER_KEY, "image/png", 60, size=1000))
+    assert "content-length" not in _signed_headers(_storage().upload_url(COVER_KEY, "image/png", 60))
+
+
+def test_the_size_is_not_signed_when_the_option_is_off(monkeypatch):
+    monkeypatch.setattr(config, "S3_SIGN_CONTENT_LENGTH", False)
+    assert "content-length" not in _signed_headers(_storage().upload_url(COVER_KEY, "image/png", 60, size=1000))

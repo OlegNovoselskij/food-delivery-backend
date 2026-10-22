@@ -65,6 +65,10 @@ class StorageUnavailable(Exception):
     pass
 
 
+class StorageQuotaExceeded(Exception):
+    pass
+
+
 class InvalidUploadTicket(Exception):
     pass
 
