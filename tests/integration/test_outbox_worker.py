@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app import config, worker
 from app.emails.message import EmailSendError
@@ -73,3 +73,46 @@ def test_the_same_logical_email_is_queued_once(db):
     queue(db, dedupe_key="certificate:1")
     queue(db, dedupe_key="certificate:1")
     assert db.query(EmailOutbox).count() == 1
+
+
+def midnight_utc(days_ahead: int = 0) -> datetime:
+    return datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
+
+
+def test_the_daily_limit_defers_the_email_to_the_next_utc_day(db, monkeypatch, caplog):
+    monkeypatch.setattr(config, "EMAIL_DAILY_LIMIT", 1)
+    monkeypatch.setattr(worker, "_limit_warned_on", None)
+    queue(db, dedupe_key="first")
+    queue(db, dedupe_key="second")
+    sender = RecordingSender()
+
+    assert worker.process_one(sender) is True
+    assert worker.process_one(sender) is True
+    assert len(sender.sent) == 1
+
+    deferred = db.query(EmailOutbox).filter(EmailOutbox.status == "pending").one()
+    assert deferred.attempts == 0 and deferred.last_error is None
+    assert deferred.next_attempt_at == midnight_utc(1)
+    assert worker.process_one(sender) is False
+    assert [r.levelname for r in caplog.records if "Daily email limit" in r.message] == ["WARNING"]
+
+
+def test_the_limit_warning_is_logged_once_a_day(db, monkeypatch, caplog):
+    monkeypatch.setattr(config, "EMAIL_DAILY_LIMIT", 1)
+    monkeypatch.setattr(worker, "_limit_warned_on", None)
+    queue(db, dedupe_key="first")
+    worker.process_one(RecordingSender())
+    for name in ("second", "third"):
+        queue(db, dedupe_key=name)
+        worker.process_one(RecordingSender())
+    assert len([r for r in caplog.records if "Daily email limit" in r.message]) == 1
+
+
+def test_a_zero_limit_means_no_limit(db, monkeypatch):
+    monkeypatch.setattr(config, "EMAIL_DAILY_LIMIT", 0)
+    queue(db, dedupe_key="first")
+    queue(db, dedupe_key="second")
+    sender = RecordingSender()
+    worker.process_one(sender)
+    worker.process_one(sender)
+    assert len(sender.sent) == 2

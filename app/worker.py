@@ -1,7 +1,7 @@
 import logging
 import signal
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from app import config
 from app.database import SessionLocal
@@ -17,6 +17,7 @@ MAX_DELAY_SECONDS = 6 * 3600
 ABANDONED_AFTER = timedelta(days=7)
 CLEANUP_EVERY_SECONDS = 3600
 _stop = False
+_limit_warned_on: date | None = None
 
 
 def _request_stop(signum, frame) -> None:
@@ -28,11 +29,33 @@ def _retry_delay(attempts: int) -> int:
     return min(config.EMAIL_RETRY_BASE_SECONDS * 5 ** (attempts - 1), MAX_DELAY_SECONDS)
 
 
+def _start_of_utc_day(moment: datetime) -> datetime:
+    return moment.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def _daily_limit_reached(db, now: datetime) -> bool:
+    global _limit_warned_on
+    if config.EMAIL_DAILY_LIMIT <= 0:
+        return False
+    if email_outbox_repository.count_sent_since(db, _start_of_utc_day(now)) < config.EMAIL_DAILY_LIMIT:
+        return False
+    if _limit_warned_on != now.date():
+        _limit_warned_on = now.date()
+        logger.warning("Daily email limit (%s) reached, the queue waits for the next UTC day", config.EMAIL_DAILY_LIMIT)
+    return True
+
+
 def process_one(sender: EmailSender) -> bool:
     with SessionLocal() as db:
         item = email_outbox_repository.claim_next(db)  # locked until the commit below: other workers skip it
         if item is None:
             return False
+
+        now = datetime.now(UTC)
+        if _daily_limit_reached(db, now):  # not a failed attempt: the email only waits for the next day
+            item.next_attempt_at = _start_of_utc_day(now) + timedelta(days=1)
+            db.commit()
+            return True
 
         message = OutgoingEmail(
             to_email=item.to_email,

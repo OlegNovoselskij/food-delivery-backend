@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -22,3 +24,7 @@ def claim_next(db: Session) -> EmailOutbox | None:
         .with_for_update(skip_locked=True)
         .first()
     )
+
+
+def count_sent_since(db: Session, since: datetime) -> int:
+    return db.query(func.count(EmailOutbox.id)).filter(EmailOutbox.status == "sent", EmailOutbox.sent_at >= since).scalar()
